@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digestive Rescue Challenge</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --primary-bg: #111a28;
+            --glass-bg: rgba(25, 40, 60, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --neon-blue: #4facfe;
+            --neon-green: #2ecc71;
+            --neon-red: #ff4757;
+            --text-light: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Mobile Responsive Game Container */
+        #game-container {
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            max-height: 900px;
+            background-color: var(--primary-bg);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* Screen Management */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            z-index: 1;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* --- Start Screen --- */
+        #start-screen {
+            background: linear-gradient(to bottom, #1a2a6c, #112b3c, #203a43);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .game-logo-large {
+            width: 200px;
+            margin-bottom: 20px;
+        }
+
+        .start-btn, .restart-btn {
+            background: linear-gradient(135deg, var(--neon-blue), #00f2fe);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 30px;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.5);
+            transition: transform 0.1s;
+        }
+        
+        .start-btn:active, .restart-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* --- Main Game Screen --- */
+        #game-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: skyblue; /* Initial Sky Blue */
+            background-size: cover;
+            background-position: center;
+            z-index: 0;
+            transition: background-image 0.5s ease-in-out;
+        }
+
+        /* Overlay to darken background slightly for readability */
+        .bg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.8) 100%);
+            z-index: 1;
+        }
+
+        .game-ui {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .top-logo {
+            width: 200px;
+        }
+
+        .timer {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        #initial-center-logo {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            z-index: 2;
+            transition: opacity 0.3s;
+        }
+
+        .question-container {
+            text-align: center;
+            margin-top: auto;
+            margin-bottom: 20px;
+        }
+
+        .challenge-badge {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .category-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 15px 10px;
+            border-radius: 10px;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .category-btn.active {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.5);
+            background: rgba(79, 172, 254, 0.2);
+        }
+
+        #product-section {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            display: none; /* Hidden initially */
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .product-title {
+            color: white;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .products-container {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .product-card {
+            width: 45%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .product-card:active {
+            transform: scale(0.95);
+        }
+        
+        .product-card img {
+            max-width: 100%;
+            border-radius: 5px;
+        }
+
+        /* --- End Screens --- */
+        .result-box {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 40px 20px;
+            width: 80%;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        #success-screen {
+            background: url('https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80') center/cover;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Fail Screen Centering & New Background matching image */
+        #fail-screen {
+            background: rgba(17, 26, 40, 0.95);
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Updated Fail Box styling to match provided image */
+        .fail-box {
+            background: #1e1111;
+            border: 1px solid rgba(255, 71, 87, 0.2);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+
+        .icon-large {
+            font-size: 60px;
+            margin-bottom: 20px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+        }
+
+        .icon-success {
+            color: var(--neon-green);
+            border: 3px solid var(--neon-green);
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.4);
+        }
+
+        .icon-fail {
+            color: #ff6b81;
+            border: 3px solid var(--neon-red);
+            box-shadow: 0 0 30px rgba(255, 71, 87, 0.5);
+        }
+
+        .result-text {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .result-subtext {
+            color: #ccc;
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        
+        <div id="start-screen" class="screen active">
+            <img src="https://via.placeholder.com/200x100.png?text=GAME+LOGO" alt="Game Logo" class="game-logo-large">
+            <h1 style="color: white; margin-bottom: 10px;">Digestive Rescue</h1>
+            <p style="color: #ccc; font-size: 0.9rem; line-height: 1.4;">
+                Test your knowledge and find the right solution for every interruption.<br>You have 60 seconds!
+            </p>
+            <button class="start-btn" onclick="startGame()">Start Challenge</button>
+        </div>
+
+        <div id="main-screen" class="screen">
+            <div id="game-bg"></div>
+            <div class="bg-overlay"></div>
+            
+            <div class="game-ui">
+                <header>
+                    <img src="assets/Asset 1.png" alt="Spimaco" class="top-logo">
+                    <div class="timer" id="timer-display">60</div>
+                </header>
+
+                <img src="assets/Asset 2.png" id="initial-center-logo" alt="Center Logo">
+
+                <div class="question-container">
+                    <h2 class="question-text">What is causing the interruption?</h2>
+                </div>
+
+                <div class="categories-grid" id="categories-container">
+                    </div>
+
+                <div id="product-section">
+                    <div class="product-title">Product selection</div>
+                    <div class="products-container" id="products-container">
+                        </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="success-screen" class="screen">
+            <div class="result-box">
+                <div class="icon-large icon-success">✔️</div>
+                <div class="result-text">You are eligible to take this station badge</div>
+                <button class="restart-btn" onclick="resetGameToStart()">Finish</button>
+            </div>
+        </div>
+
+        <div id="fail-screen" class="screen">
+            <div class="result-box fail-box">
+                <div class="icon-large icon-fail">❌</div>
+                <div class="result-text">Incorrect Selection</div>
+                <div class="result-subtext">That product doesn't match the condition.</div>
+                <button class="restart-btn" style="background: #e74c3c; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); width: 100%; border-radius: 20px;" onclick="resetGameToStart()">Restart Game</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /* --- GAME DATA & CONFIGURATION --- */
+        // Replace 'sceneImg' and 'img' URLs with your actual image paths.
+        const gameData = [
+            {
+                id: 'heavy_meal',
+                label: 'heavy meal',
+                sceneImg: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=600', 
+                packs: [
+                    { id: 'peptazol', img: 'assets/peptazol.png', isCorrect: false },
+                    { id: 'enzymax', img: 'assets/enzymax.png', isCorrect: true }
+                ]
+            },
+            {
+                id: 'heartburn',
+                label: 'heartburn',
+                sceneImg: 'https://images.unsplash.com/photo-1606149059549-6042addafc52?auto=format&fit=crop&q=80&w=600',
+                packs: [
+                    { id: 'peptazol', img: 'assets/peptazol.png', isCorrect: true },
+                    { id: 'fevadol fast', img: 'assets/fevadol_fast.png', isCorrect: false }
+                ]
+            },
+            {
+                id: 'indigestion',
+                label: 'indigestion',
+                sceneImg: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=600',
+                packs: [
+                    { id: 'fevadol extra', img: 'assets/fevadol_extra.png', isCorrect: true },
+                    { id: 'fevadol plus', img: 'assets/fevadol_plus.png', isCorrect: false }
+                ]
+            },
+            {
+                id: 'trapped_wind',
+                label: 'trapped wind',
+                sceneImg: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=600',
+                packs: [
+                    { id: 'snafi', img: 'assets/snafi.png', isCorrect: false },
+                    { id: 'legam', img: 'assets/legam.png', isCorrect: true }
+                ]
+            }
+        ];
+
+        /* --- GAME LOGIC --- */
+        let timerInterval;
+        let timeLeft = 60;
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function startGame() {
+            // Reset UI
+            document.getElementById('game-bg').style.backgroundImage = 'none';
+            document.getElementById('game-bg').style.backgroundColor = 'skyblue';
+            document.getElementById('initial-center-logo').style.display = 'block';
+            document.getElementById('product-section').style.display = 'none';
+            
+            renderCategories();
+            showScreen('main-screen');
+            
+            // Start Timer
+            timeLeft = 60;
+            document.getElementById('timer-display').innerText = timeLeft;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-display').innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    showEndScreen(false); // Time out counts as fail
+                }
+            }, 1000);
+        }
+
+        function renderCategories() {
+            const container = document.getElementById('categories-container');
+            container.innerHTML = '';
+            gameData.forEach(cat => {
+                const btn = document.createElement('div');
+                btn.className = 'category-btn';
+                btn.innerText = cat.label;
+                btn.onclick = () => selectCategory(cat.id, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectCategory(categoryId, btnElement) {
+            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            const categoryData = gameData.find(c => c.id === categoryId);
+
+            document.getElementById('initial-center-logo').style.display = 'none';
+            document.getElementById('game-bg').style.backgroundImage = `url('${categoryData.sceneImg}')`;
+
+            const productsContainer = document.getElementById('products-container');
+            productsContainer.innerHTML = '';
+            
+            categoryData.packs.forEach(pack => {
+                const packEl = document.createElement('div');
+                packEl.className = 'product-card';
+                packEl.onclick = () => checkAnswer(pack.isCorrect);
+                packEl.innerHTML = `<img src="${pack.img}" alt="Product">`;
+                productsContainer.appendChild(packEl);
+            });
+
+            document.getElementById('product-section').style.display = 'flex';
+        }
+
+        function checkAnswer(isCorrect) {
+            clearInterval(timerInterval);
+            showEndScreen(isCorrect);
+        }
+
+        function showEndScreen(isSuccess) {
+            if (isSuccess) {
+                showScreen('success-screen');
+                // Trigger Confetti Effect on Success
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#2ecc71', '#4facfe', '#ffffff', '#f1c40f']
+                });
+            } else {
+                showScreen('fail-screen');
+            }
+        }
+
+        function resetGameToStart() {
+            showScreen('start-screen');
+        }
+    </script>
+</body>
+</html>

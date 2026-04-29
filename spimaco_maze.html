@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relief Maze Challenge</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --primary-bg: #131a26;
+            --glass-bg: rgba(15, 25, 40, 0.85);
+            --neon-blue: #4facfe;
+            --neon-green: #2ecc71;
+            --neon-red: #ff4757;
+            --cell-blue: rgba(45, 95, 145, 0.5); /* Color of the path blocks */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Mobile Responsive Game Container */
+        #game-container {
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            max-height: 900px;
+            background-color: var(--primary-bg);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,1);
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            z-index: 1;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* --- Start Screen --- */
+        #start-screen {
+            background: linear-gradient(to bottom, #112b3c, #09101a);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .game-logo-large {
+            width: 200px;
+            margin-bottom: 20px;
+        }
+
+        .start-btn, .restart-btn {
+            background: linear-gradient(135deg, var(--neon-blue), #00f2fe);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 30px;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.5);
+            transition: transform 0.1s;
+        }
+        
+        .start-btn:active, .restart-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* --- Main Game Screen --- */
+        #game-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 40%, #1e2d40 0%, #0d141e 80%);
+            z-index: 0;
+        }
+
+        .game-ui {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 15px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .timer-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid var(--neon-blue);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: rgba(0,0,0,0.5);
+            box-shadow: 0 0 10px rgba(79, 172, 254, 0.4);
+        }
+
+        /* --- Grid/Bordered Maze Design --- */
+        #maze-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        #maze {
+            display: grid;
+            /* 9 columns, 15 rows */
+            grid-template-columns: repeat(9, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+            gap: 3px; /* This creates the distinct borders/grid lines between cells */
+            width: 100%;
+            max-width: 350px;
+            aspect-ratio: 9 / 15;
+            background: transparent;
+            /* --- UPDATE 1: ADD MAIN BORDER --- */
+            border: 3px solid var(--neon-blue); /* Neon Blue main border */
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.5); /* Glow on border */
+            border-radius: 5px; /* Slight roundness */
+        }
+
+        .cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 2px;
+        }
+
+        /* The Grid Path */
+        .cell.path {
+            background: var(--cell-blue);
+            box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- UPDATE 2: MAKE WALLS BLACK WITH BORDER --- */
+        .cell.wall {
+            background: #000000; /* Solid Black walls */
+            border: 1px solid rgba(255, 255, 255, 0.05); /* subtle grid line consistent with path cells */
+        }
+
+        /* Glowing Red Obstacles with Dash */
+        .cell.obstacle {
+            background: rgba(255, 71, 87, 0.85);
+            box-shadow: 0 0 15px var(--neon-red), inset 0 0 10px rgba(255, 255, 255, 0.3);
+            animation: pulse-red 2s infinite;
+        }
+        
+        .cell.obstacle::after {
+            content: '';
+            width: 50%;
+            height: 4px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 0 8px white;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 10px var(--neon-red); }
+            50% { box-shadow: 0 0 25px var(--neon-red); }
+            100% { box-shadow: 0 0 10px var(--neon-red); }
+        }
+        
+        /* Goal Cell */
+        .cell.goal {
+            background: rgba(46, 204, 113, 0.2);
+            box-shadow: 0 0 20px var(--neon-green), inset 0 0 10px var(--neon-green);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            border-radius: 5px;
+        }
+
+        /* --- Player Token --- */
+        .player-token {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .player-glow {
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(circle, #ffffff 0%, #4facfe 80%);
+            border-radius: 50%;
+            box-shadow: 0 0 10px 2px var(--neon-blue), 0 0 20px #fff;
+        }
+
+        /* --- D-Pad Controls --- */
+        .controls-area {
+            display: flex;
+            justify-content: center;
+            padding-bottom: 20px;
+        }
+
+        .d-pad {
+            display: grid;
+            grid-template-columns: 60px 60px 60px;
+            grid-template-rows: 60px 60px;
+            gap: 8px;
+        }
+
+        .d-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 12px;
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: all 0.1s;
+        }
+
+        .d-btn:active {
+            background: rgba(79, 172, 254, 0.2);
+            box-shadow: 0 0 15px var(--neon-blue);
+            color: white;
+            transform: scale(0.92);
+        }
+
+        .btn-up { grid-column: 2; grid-row: 1; }
+        .btn-left { grid-column: 1; grid-row: 2; }
+        .btn-down { grid-column: 2; grid-row: 2; }
+        .btn-right { grid-column: 3; grid-row: 2; }
+
+        /* --- Obstacle Modal --- */
+        #obstacle-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--glass-bg);
+            border: 2px solid var(--neon-red);
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            width: 95%;
+            box-shadow: 0 0 40px rgba(255, 71, 87, 0.4);
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content h3 { color: var(--neon-red); margin-bottom: 10px; font-size: 1.5rem; }
+        .modal-content p { color: white; margin-bottom: 25px; font-size: 1.1rem; }
+        .modal-content strong { color: var(--neon-blue); font-size: 1.2rem; }
+
+        .med-options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .med-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 10px;
+            cursor: pointer;
+            width: 30%;
+            transition: transform 0.1s;
+        }
+
+        .med-card:active { transform: scale(0.95); }
+        .med-card img { width: 100%; border-radius: 5px; }
+        .med-label { color: white; font-size: 0.75rem; margin-top: 8px; font-weight: bold; }
+
+        /* --- End Screens --- */
+        .result-box {
+            background: var(--glass-bg);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 40px 20px;
+            width: 85%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            backdrop-filter: blur(15px);
+        }
+
+        #success-screen {
+            background: url('https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80') center/cover;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #fail-screen {
+            background: rgba(10, 15, 25, 0.95);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fail-box {
+            background: #1e1111;
+            border-color: rgba(255, 71, 87, 0.3);
+            box-shadow: 0 10px 40px rgba(255,71,87,0.2);
+        }
+
+        .top-logo {
+            width: 200px;
+        }
+
+        .icon-large { font-size: 60px; margin-bottom: 20px; display: inline-flex; justify-content: center; align-items: center; width: 100px; height: 100px; border-radius: 50%; }
+        .icon-success { color: var(--neon-green); border: 3px solid var(--neon-green); box-shadow: 0 0 20px rgba(46, 204, 113, 0.4); }
+        .icon-fail { color: #ff6b81; border: 3px solid var(--neon-red); box-shadow: 0 0 30px rgba(255, 71, 87, 0.5); }
+        .result-text { color: white; font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
+        .result-subtext { color: #ccc; font-size: 0.95rem; margin-bottom: 30px; }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        
+        <div id="start-screen" class="screen active">
+            <img src="https://via.placeholder.com/200x100.png?text=LOGO" alt="Game Logo" class="game-logo-large">
+            <h1 style="color: white; margin-bottom: 10px;">Relief Maze Challenge</h1>
+            <p style="color: #ccc; font-size: 0.95rem; line-height: 1.5;">
+                Navigate the grid to reach the goal.<br><br>
+                Clear the red health obstacles by selecting the correct medication. <strong>Wrong choices will reset you to the start!</strong>
+            </p>
+            <button class="start-btn" onclick="startGame()">Enter Maze</button>
+        </div>
+
+        <div id="main-screen" class="screen">
+            <div id="game-bg"></div>
+            
+            <div class="game-ui">
+                <header>
+                    <img src="assets/Asset 1.png" alt="Spimaco" class="top-logo">
+                    <div class="timer-circle" id="timer-display">60</div>
+                </header>
+
+                <div id="maze-container">
+                    <div id="maze">
+                        </div>
+                </div>
+
+                <div class="controls-area">
+                    <div class="d-pad">
+                        <div class="d-btn btn-up" onclick="movePlayer(0, -1)">▲</div>
+                        <div class="d-btn btn-left" onclick="movePlayer(-1, 0)">◀</div>
+                        <div class="d-btn btn-down" onclick="movePlayer(0, 1)">▼</div>
+                        <div class="d-btn btn-right" onclick="movePlayer(1, 0)">▶</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="obstacle-modal">
+                <div class="modal-content">
+                    <h3>⚠️ Obstacle</h3>
+                    <p>Path blocked by: <br><strong id="obstacle-name">...</strong></p>
+                    <p style="font-size: 0.85rem; color:#aaa;">Select the exact relief medication to clear the path.</p>
+                    <div class="med-options" id="med-options-container">
+                        </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="success-screen" class="screen">
+            <div class="result-box">
+                <div class="icon-large icon-success">✔️</div>
+                <div class="result-text">You are eligible to take this station badge</div>
+                <button class="restart-btn" onclick="resetGameToStart()">Finish</button>
+            </div>
+        </div>
+
+        <div id="fail-screen" class="screen">
+            <div class="result-box fail-box">
+                <div class="icon-large icon-fail">❌</div>
+                <div class="result-text">Time's Up!</div>
+                <div class="result-subtext">You didn't reach the goal in time.</div>
+                <button class="restart-btn" style="background: #e74c3c; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); width: 100%; border-radius: 20px;" onclick="resetGameToStart()">Restart Game</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /* --- GRID MAZE CONFIGURATION (9x15) --- */
+        // 0 = Wall, 1 = Path, 8 = Start, 9 = Goal
+        // 2 = Blocked Nose, 3 = Cough, 4 = Sneezing
+        // Map matches the blocky grid style from the uploaded reference image.
+        const initialMazeMap = [
+            [0,0,0,0,0,0,0,9,0], // Row 0: Goal at (7,0)
+            [1,1,1,1,0,1,0,1,0], // Row 1
+            [1,0,0,1,0,1,0,1,0], // Row 2
+            [1,0,2,1,0,1,0,1,0], // Row 3 (Obstacle 2 at 2,3)
+            [1,0,1,0,0,1,0,1,0], // Row 4
+            [1,0,1,1,1,1,0,1,0], // Row 5
+            [1,0,0,0,1,0,0,1,0], // Row 6
+            [1,0,1,1,3,1,1,1,0], // Row 7 (Obstacle 3 at 4,7)
+            [1,0,1,0,0,0,0,0,0], // Row 8
+            [1,0,1,1,1,1,1,1,1], // Row 9
+            [1,0,0,0,0,0,0,0,0], // Row 10
+            [1,1,1,1,1,4,1,1,1], // Row 11 (Obstacle 4 at 5,11)
+            [0,0,0,0,0,0,0,0,1], // Row 12
+            [1,1,1,1,1,1,1,1,1], // Row 13
+            [8,0,0,0,0,0,0,0,0]  // Row 14: Start at (0,14)
+        ];
+
+        const obstaclesData = {
+            2: { name: "Blocked Nose", correctMedId: "lorinese" },
+            3: { name: "Cough", correctMedId: "enzymax" },
+            4: { name: "Sneezing", correctMedId: "sinus" }
+        };
+
+        const medications = [
+            { id: "lorinese", label: "Lorinese-D", img: "assets/lorinase.png" },
+            { id: "enzymax", label: "Enzymax", img: "assets/enzymax.png" },
+            { id: "sinus", label: "Fevadol Sinus", img: "assets/fevadol_sinus.png" }
+        ];
+
+        /* --- GAME STATE --- */
+        let currentMaze = [];
+        let playerX = 0; 
+        let playerY = 14; 
+        let timerInterval;
+        let timeLeft = 60;
+        let isInputFrozen = false; 
+        let activeObstacleCell = null; 
+        
+        // Player DOM element created once
+        const playerToken = document.createElement('div');
+        playerToken.className = 'player-token';
+        playerToken.innerHTML = '<div class="player-glow"></div>';
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function startGame() {
+            currentMaze = JSON.parse(JSON.stringify(initialMazeMap));
+            
+            playerX = 0;
+            playerY = 14;
+            isInputFrozen = false;
+
+            renderMazeGrid();
+            updatePlayerVisual(); // Snaps player into the correct grid div
+            document.getElementById('obstacle-modal').style.display = 'none';
+
+            showScreen('main-screen');
+            
+            timeLeft = 60;
+            document.getElementById('timer-display').innerText = timeLeft;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-display').innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    showEndScreen(false);
+                }
+            }, 1000);
+        }
+
+        function renderMazeGrid() {
+            const mazeDiv = document.getElementById('maze');
+            mazeDiv.innerHTML = ''; // Clear everything
+
+            for (let y = 0; y < currentMaze.length; y++) {
+                for (let x = 0; x < currentMaze[y].length; x++) {
+                    let val = currentMaze[y][x];
+                    let cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `cell-${x}-${y}`;
+
+                    if (val === 0) {
+                        cell.classList.add('wall');
+                    } else if (val === 1 || val === 8) {
+                        cell.classList.add('path');
+                    } else if (val === 9) {
+                        cell.classList.add('goal');
+                        cell.innerHTML = "🏛️<br>GOAL";
+                    } else if (val === 2 || val === 3 || val === 4) {
+                        cell.classList.add('obstacle');
+                    }
+
+                    mazeDiv.appendChild(cell);
+                }
+            }
+        }
+
+        // Because we are using CSS Grid Gaps, moving the actual DOM node into the cell 
+        // prevents alignment issues caused by absolute positioning math.
+        function updatePlayerVisual() {
+            const targetCell = document.getElementById(`cell-${playerX}-${playerY}`);
+            if (targetCell) {
+                targetCell.appendChild(playerToken);
+            }
+        }
+
+        function movePlayer(dx, dy) {
+            if (isInputFrozen) return;
+
+            let nx = playerX + dx;
+            let ny = playerY + dy;
+
+            if (nx < 0 || nx >= 9 || ny < 0 || ny >= 15) return;
+
+            let cellValue = currentMaze[ny][nx];
+
+            if (cellValue === 0) return; // Hit Wall
+
+            playerX = nx;
+            playerY = ny;
+            updatePlayerVisual();
+
+            if (cellValue === 2 || cellValue === 3 || cellValue === 4) {
+                triggerObstacle(cellValue, nx, ny);
+                return;
+            }
+
+            if (cellValue === 9) {
+                clearInterval(timerInterval);
+                setTimeout(() => showEndScreen(true), 200);
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('main-screen').classList.contains('active') && !isInputFrozen) {
+                if (e.key === 'ArrowUp') movePlayer(0, -1);
+                if (e.key === 'ArrowDown') movePlayer(0, 1);
+                if (e.key === 'ArrowLeft') movePlayer(-1, 0);
+                if (e.key === 'ArrowRight') movePlayer(1, 0);
+            }
+        });
+
+        function triggerObstacle(obstacleId, cellX, cellY) {
+            isInputFrozen = true;
+            activeObstacleCell = { x: cellX, y: cellY, id: obstacleId };
+            const obstacleData = obstaclesData[obstacleId];
+
+            document.getElementById('obstacle-name').innerText = obstacleData.name;
+
+            const optionsContainer = document.getElementById('med-options-container');
+            optionsContainer.innerHTML = '';
+
+            medications.forEach(med => {
+                const card = document.createElement('div');
+                card.className = 'med-card';
+                card.onclick = () => handleMedSelection(med.id, obstacleData.correctMedId);
+                card.innerHTML = `<img src="${med.img}" alt="${med.label}"><div class="med-label">${med.label}</div>`;
+                optionsContainer.appendChild(card);
+            });
+
+            setTimeout(() => {
+                document.getElementById('obstacle-modal').style.display = 'flex';
+            }, 100);
+        }
+
+        function handleMedSelection(selectedMedId, correctMedId) {
+            document.getElementById('obstacle-modal').style.display = 'none';
+
+            if (selectedMedId === correctMedId) {
+                // Correct Match: Turn Obstacle into normal path
+                currentMaze[activeObstacleCell.y][activeObstacleCell.x] = 1; 
+                const cellEl = document.getElementById(`cell-${activeObstacleCell.x}-${activeObstacleCell.y}`);
+                cellEl.classList.remove('obstacle');
+                cellEl.classList.add('path');
+                
+                isInputFrozen = false; 
+            } else {
+                // Wrong Match: Return to Start
+                playerX = 0;
+                playerY = 14;
+                updatePlayerVisual();
+                isInputFrozen = false;
+            }
+        }
+
+        function showEndScreen(isSuccess) {
+            if (isSuccess) {
+                showScreen('success-screen');
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#2ecc71', '#4facfe', '#ffffff']
+                });
+            } else {
+                showScreen('fail-screen');
+            }
+        }
+
+        function resetGameToStart() {
+            showScreen('start-screen');
+        }
+    </script>
+</body>
+</html>
