@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Digestive Rescue Challenge - Station 1</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --primary-bg: #111a28;
+            --glass-bg: rgba(25, 40, 60, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --neon-blue: #4facfe;
+            --neon-green: #2ecc71;
+            --neon-red: #ff4757;
+            --text-light: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Mobile Responsive Game Container */
+        #game-container {
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            max-height: 900px;
+            background-color: var(--primary-bg);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* Screen Management */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            z-index: 1;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* --- Start & End Screens --- */
+        #start-screen {
+            background: linear-gradient(to bottom, #1a2a6c, #112b3c, #203a43);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .game-logo-large {
+            width: 200px;
+            margin-bottom: 20px;
+        }
+
+        .start-btn, .restart-btn, .action-btn {
+            background: linear-gradient(135deg, var(--neon-blue), #00f2fe);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.5);
+            transition: transform 0.1s;
+        }
+        
+        .start-btn:active, .restart-btn:active, .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* --- Stage 2 Circle Button --- */
+        .circle-btn {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--neon-red), #ff6b81);
+            color: white;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(255, 71, 87, 0.6);
+            transition: transform 0.1s, box-shadow 0.3s, background 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            line-height: 1.2;
+            margin-top: 40px; 
+            flex-shrink: 0;
+            z-index: 20;
+        }
+        
+        .circle-btn:active {
+            transform: scale(0.95);
+        }
+
+        .circle-btn:disabled {
+            background: #555;
+            color: #888;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* --- Header UI --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        #stage2-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .top-logo {
+            height: 40px;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 15px;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 15px;
+            padding: 5px 15px;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            backdrop-filter: blur(5px);
+        }
+
+        /* --- Toast Notification --- */
+        .toast {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 71, 87, 0.95);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1rem;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 25px rgba(255, 71, 87, 0.5);
+            text-align: center;
+            width: max-content;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            opacity: 1;
+            top: 90px;
+        }
+
+        /* --- Dialog Modals --- */
+        .dialog-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            backdrop-filter: blur(5px);
+        }
+
+        .dialog-overlay.active {
+            display: flex;
+        }
+
+        .dialog-box {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px 20px;
+            width: 85%;
+            text-align: center;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .dialog-box img {
+            width: 80px;
+            margin-bottom: 15px;
+        }
+
+        .dialog-box h2 {
+            margin-bottom: 10px;
+            color: var(--neon-blue);
+        }
+
+        .dialog-box p {
+            font-size: 1rem;
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        /* --- Stage 1: Catch Game --- */
+        #stage1-screen {
+            background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: calc(100% - 80px);
+            touch-action: none;
+        }
+
+        /* --- Stage 2: Tetris Style --- */
+        #stage2-screen {
+            background: linear-gradient(to bottom, #141e30, #243b55);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; 
+        }
+
+        .tetris-wrapper {
+            position: relative;
+            width: 50%; /* Vertical rectangle width */
+            max-width: 200px;
+            height: 400px; /* Double the width for 4 cols x 8 rows */
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            transition: box-shadow 0.3s, border-color 0.3s;
+            overflow: hidden; 
+            flex-shrink: 0;
+            margin-top: 30px; 
+        }
+
+        @media (max-width: 420px) {
+            .tetris-wrapper {
+                width: 50vw; 
+                height: 100vw;
+            }
+        }
+
+        @keyframes glowRed {
+            0% { box-shadow: 0 0 10px rgba(255, 71, 87, 0.2); border-color: rgba(255, 71, 87, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(255, 71, 87, 0.8), inset 0 0 20px rgba(255, 71, 87, 0.4); border-color: rgba(255, 71, 87, 1); }
+            100% { box-shadow: 0 0 10px rgba(255, 71, 87, 0.2); border-color: rgba(255, 71, 87, 0.5); }
+        }
+
+        .tetris-wrapper.glow {
+            animation: glowRed 1.5s infinite;
+        }
+
+        .threshold-line {
+            position: absolute;
+            bottom: calc((100% / 8) * 6); /* Set to 6 blocks high for an 8-row grid */
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: rgba(255, 71, 87, 0.6);
+            border-top: 1px dashed white;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .grid-container {
+            display: flex; 
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 10;
+        }
+
+        .grid-cell {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.2rem; /* Adjusted for neat fitting */
+            cursor: pointer;
+            width: 100%;
+        }
+
+        @keyframes dropIn {
+            from { transform: translateY(-400px); } 
+            to { transform: translateY(0); }
+        }
+        .item-block {
+            animation: dropIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #peptazol-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 150px;
+            z-index: 100;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #peptazol-popup.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* --- End Screens --- */
+        .result-box {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 40px 20px;
+            width: 80%;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        #success-screen {
+            background: url('https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80') center/cover;
+            justify-content: center;
+            align-items: center;
+        }
+        .icon-large {
+            font-size: 60px;
+            margin-bottom: 20px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+        }
+        .icon-success {
+            color: var(--neon-green);
+            border: 3px solid var(--neon-green);
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.4);
+        }
+        .result-text {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        
+        <!-- Toast Notification -->
+        <div id="peptazol-toast" class="toast">Use Peptazol to digest this food!</div>
+
+        <!-- START SCREEN -->
+        <div id="start-screen" class="screen active">
+            <img src="assets/Digestive Health Logo.png" alt="Game Logo" class="game-logo-large" onerror="this.onerror=null; this.src='https://placehold.co/200x100/171777/27bdff?text=Spimaco+Logo'">
+            <h1 style="color: white; margin-bottom: 10px;">Digestive Rescue</h1>
+            <p style="color: #ccc; font-size: 0.9rem; line-height: 1.4;">
+                Station 1 Challenge: Protect your digestion in two stages!
+            </p>
+            <button class="start-btn" onclick="showStage1Dialog()">Start Challenge</button>
+        </div>
+
+        <!-- STAGE 1: CATCH GAME -->
+        <div id="stage1-screen" class="screen">
+            <header>
+                <img src="assets/Asset 1.png" alt="Logo" class="top-logo" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
+                <div class="stats-bar">
+                    <div class="stat-box" id="s1-timer">⏱️ 30</div>
+                    <div class="stat-box" id="s1-score">⭐ 0</div>
+                    <div class="stat-box" id="s1-lives">❤️ 3</div>
+                </div>
+            </header>
+            <canvas id="catchCanvas"></canvas>
+        </div>
+
+        <!-- STAGE 2: TETRIS GAME -->
+        <div id="stage2-screen" class="screen">
+            <header id="stage2-header">
+                <img src="assets/Asset 1.png" alt="Logo" class="top-logo" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
+                <div class="stats-bar">
+                    <div class="stat-box" style="font-size: 0.85rem;">Tap columns to drop!</div>
+                </div>
+            </header>
+            
+            <div class="tetris-wrapper" id="tetris-wrapper">
+                <div class="threshold-line"></div>
+                <div class="grid-container" id="tetris-grid">
+                    <!-- Grid cells injected via JS -->
+                </div>
+                <img src="assets/peptazol.png" id="peptazol-popup" onerror="this.onerror=null; this.src='https://placehold.co/150x250/ff4757/white?text=Peptazol'">
+            </div>
+
+            <button class="circle-btn" id="btn-peptazol" disabled onclick="usePeptazol()">Use<br>Peptazol</button>
+        </div>
+
+        <!-- FINAL SUCCESS SCREEN -->
+        <div id="success-screen" class="screen">
+            <div class="result-box">
+                <div class="icon-large icon-success">✔️</div>
+                <div class="result-text">Station 1 Completed!</div>
+                <p style="color:#ccc; margin-bottom: 20px;">You are eligible to take this station badge.</p>
+                <button class="restart-btn" onclick="location.reload()">Finish</button>
+            </div>
+        </div>
+
+        <!-- DIALOGS -->
+        
+        <!-- Dialog: Stage 1 Intro -->
+        <div class="dialog-overlay" id="dialog-s1-intro">
+            <div class="dialog-box">
+                <div style="font-size: 50px; margin-bottom: 10px;">🛒</div>
+                <h2>Stage 1: Catch Game</h2>
+                <p>Catch the junk food (🍔🍕) with your <strong>Enzymax</strong> pack to earn points (5 pts). Avoid the germs (🦠) or you lose a life!</p>
+                <button class="action-btn" onclick="startStage1()">Ready!</button>
+            </div>
+        </div>
+
+        <!-- Dialog: Stage 1 End -->
+        <div class="dialog-overlay" id="dialog-s1-end">
+            <div class="dialog-box">
+                <h2 id="s1-end-title">Time's Up!</h2>
+                <p id="s1-end-desc">You collected a lot of junk food!</p>
+                <button class="action-btn" onclick="showStage2Dialog()">Be ready to the next stage</button>
+            </div>
+        </div>
+
+        <!-- Dialog: Stage 2 Intro -->
+        <div class="dialog-overlay" id="dialog-s2-intro">
+            <div class="dialog-box">
+                <div style="font-size: 50px; margin-bottom: 10px;">🧱</div>
+                <h2>Stage 2: Tetris Stack</h2>
+                <p>Tap the columns to drop junk food. When a column stacks 6 items high, the screen will glow red. Use <strong>Peptazol</strong> to clear it!</p>
+                <button class="action-btn" onclick="startStage2()">Start Stage 2</button>
+            </div>
+        </div>
+
+        <!-- Dialog: Stage 2 End -->
+        <div class="dialog-overlay" id="dialog-s2-end">
+            <div class="dialog-box">
+                <img src="assets/peptazol.png" style="width: 60px;" onerror="this.style.display='none'">
+                <h2>Relief Delivered!</h2>
+                <p>You successfully used Peptazol to clear the heavy junk food stack.</p>
+                <button class="action-btn" onclick="finishGame()">End Stage</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /* --- GLOBAL VARIABLES --- */
+        let gameActive = false;
+
+        /* --- STAGE 1 LOGIC --- */
+        const canvas = document.getElementById('catchCanvas');
+        const ctx = canvas.getContext('2d');
+        let animationId;
+        let s1TimerInterval;
+        let s1Time = 30;
+        let s1Score = 0;
+        let s1Lives = 3;
+        
+        let basket = { x: 0, y: 0, width: 90, height: 90 }; // Increased base width slightly
+        let items = [];
+        let junkEmojis = ['🍔', '🍕', '🍟', '🍩', '🌭'];
+        let germEmoji = '🦠';
+        
+        // Load Enzymax Image & Fix Aspect Ratio
+        const enzymaxImg = new Image();
+        enzymaxImg.onload = function() {
+            // Calculate the exact aspect ratio of the image file
+            const aspectRatio = this.naturalHeight / this.naturalWidth;
+            
+            // Set basket width, then adjust height so it doesn't squish
+            basket.width = 90; 
+            basket.height = basket.width * aspectRatio; 
+            
+            // Re-center basket vertically after adjusting height
+            resizeCanvas();
+        };
+        enzymaxImg.src = 'assets/enzymax.png';
+
+        function showStage1Dialog() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('stage1-screen').classList.add('active');
+            document.getElementById('dialog-s1-intro').classList.add('active');
+            resizeCanvas();
+        }
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height - 80; // Adjust for header height
+            basket.y = canvas.height - basket.height - 10;
+            basket.x = (canvas.width / 2) - (basket.width / 2);
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        canvas.addEventListener('touchmove', (e) => {
+            if(!gameActive) return;
+            e.preventDefault();
+            let touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+            basket.x = touchX - (basket.width / 2);
+            clampBasket();
+        }, {passive: false});
+
+        canvas.addEventListener('mousemove', (e) => {
+            if(!gameActive) return;
+            let mouseX = e.clientX - canvas.getBoundingClientRect().left;
+            basket.x = mouseX - (basket.width / 2);
+            clampBasket();
+        });
+
+        function clampBasket() {
+            if(basket.x < 0) basket.x = 0;
+            if(basket.x + basket.width > canvas.width) basket.x = canvas.width - basket.width;
+        }
+
+        function startStage1() {
+            document.getElementById('dialog-s1-intro').classList.remove('active');
+            s1Time = 30;
+            s1Score = 0;
+            s1Lives = 3;
+            items = [];
+            gameActive = true;
+            updateS1UI();
+            
+            s1TimerInterval = setInterval(() => {
+                s1Time--;
+                updateS1UI();
+                if(s1Time <= 0) {
+                    endStage1("Time's Up!", `You collected ${s1Score} points of junk food.`);
+                }
+            }, 1000);
+
+            gameLoop();
+        }
+
+        function updateS1UI() {
+            document.getElementById('s1-timer').innerText = `⏱️ ${s1Time}`;
+            document.getElementById('s1-score').innerText = `⭐ ${s1Score}`;
+            document.getElementById('s1-lives').innerText = `❤️ ${s1Lives}`;
+        }
+
+        function spawnItem() {
+            if(Math.random() < 0.05) { 
+                let isGerm = Math.random() < 0.3; 
+                items.push({
+                    x: Math.random() * (canvas.width - 30),
+                    y: -30,
+                    size: 30,
+                    speed: 3 + Math.random() * 3,
+                    type: isGerm ? 'germ' : 'junk',
+                    emoji: isGerm ? germEmoji : junkEmojis[Math.floor(Math.random() * junkEmojis.length)]
+                });
+            }
+        }
+
+        function gameLoop() {
+            if(!gameActive) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (enzymaxImg.complete && enzymaxImg.naturalWidth !== 0) {
+                ctx.drawImage(enzymaxImg, basket.x, basket.y, basket.width, basket.height);
+            } else {
+                ctx.fillStyle = '#4facfe';
+                ctx.fillRect(basket.x, basket.y, basket.width, basket.height);
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.fillText('Enzymax', basket.x + 5, basket.y + 45);
+            }
+
+            spawnItem();
+
+            for (let i = items.length - 1; i >= 0; i--) {
+                let item = items[i];
+                item.y += item.speed;
+
+                ctx.font = '30px Arial';
+                ctx.fillText(item.emoji, item.x, item.y);
+
+                if (item.y + item.size > basket.y && item.y < basket.y + basket.height &&
+                    item.x + item.size > basket.x && item.x < basket.x + basket.width) {
+                    
+                    if (item.type === 'junk') {
+                        s1Score += 5;
+                    } else if (item.type === 'germ') {
+                        s1Lives--;
+                        if (s1Lives <= 0) {
+                            endStage1("You Lost Your Lives!", "Germs overtook the digestion process.");
+                            return; 
+                        }
+                    }
+                    items.splice(i, 1);
+                    updateS1UI();
+                } else if (item.y > canvas.height) {
+                    items.splice(i, 1);
+                }
+            }
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function endStage1(title, desc) {
+            gameActive = false;
+            clearInterval(s1TimerInterval);
+            cancelAnimationFrame(animationId);
+            
+            document.getElementById('s1-end-title').innerText = title;
+            document.getElementById('s1-end-desc').innerText = desc;
+            document.getElementById('dialog-s1-end').classList.add('active');
+        }
+
+        /* --- STAGE 2 LOGIC --- */
+        const cols = 4; // 4 columns
+        const rows = 8; // 8 rows
+        let gridState = Array(cols).fill(0); 
+        let toastTriggered = false; 
+
+        function showStage2Dialog() {
+            document.getElementById('dialog-s1-end').classList.remove('active');
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('stage2-screen').classList.add('active');
+            document.getElementById('dialog-s2-intro').classList.add('active');
+        }
+
+        function startStage2() {
+            document.getElementById('dialog-s2-intro').classList.remove('active');
+            toastTriggered = false;
+            document.getElementById('peptazol-toast').classList.remove('show');
+            buildGrid();
+        }
+
+        function buildGrid() {
+            const gridEl = document.getElementById('tetris-grid');
+            gridEl.innerHTML = '';
+            gridState = Array(cols).fill(0);
+            
+            for(let c = 0; c < cols; c++) {
+                let colDiv = document.createElement('div');
+                colDiv.style.flex = '1'; 
+                colDiv.style.height = '100%';
+                colDiv.style.display = 'flex';
+                colDiv.style.flexDirection = 'column-reverse'; 
+                colDiv.style.borderRight = "1px solid rgba(255,255,255,0.05)";
+                
+                if (c === cols - 1) colDiv.style.borderRight = "none";
+                
+                colDiv.onclick = () => dropBlock(c, colDiv);
+                gridEl.appendChild(colDiv);
+            }
+        }
+
+        function dropBlock(colIndex, colElement) {
+            if(gridState[colIndex] >= rows) return; 
+
+            let emoji = junkEmojis[Math.floor(Math.random() * junkEmojis.length)];
+            let block = document.createElement('div');
+            block.className = 'grid-cell item-block';
+            block.innerText = emoji;
+            block.style.flex = `0 0 calc(100% / ${rows})`; 
+            
+            colElement.appendChild(block);
+            gridState[colIndex]++;
+
+            checkTetrisWin();
+        }
+
+        function checkTetrisWin() {
+            // Set threshold to 6 blocks high
+            let thresholdMet = gridState.some(height => height >= 6); 
+            
+            if (thresholdMet) {
+                document.getElementById('tetris-wrapper').classList.add('glow');
+                const btn = document.getElementById('btn-peptazol');
+                btn.disabled = false;
+                
+                if (!toastTriggered) {
+                    toastTriggered = true;
+                    document.getElementById('peptazol-toast').classList.add('show');
+                }
+            }
+        }
+
+        function usePeptazol() {
+            const popup = document.getElementById('peptazol-popup');
+            popup.classList.add('show');
+            document.getElementById('btn-peptazol').disabled = true;
+            document.getElementById('peptazol-toast').classList.remove('show');
+
+            setTimeout(() => {
+                document.getElementById('tetris-grid').innerHTML = '';
+                document.getElementById('tetris-wrapper').classList.remove('glow');
+                popup.classList.remove('show');
+                
+                setTimeout(() => {
+                    document.getElementById('dialog-s2-end').classList.add('active');
+                }, 400);
+            }, 1500);
+        }
+
+        function finishGame() {
+            document.getElementById('dialog-s2-end').classList.remove('active');
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('success-screen').classList.add('active');
+            
+            confetti({
+                particleCount: 150,
+                spread: 80,
+                origin: { y: 0.6 },
+                colors: ['#2ecc71', '#4facfe', '#ffffff', '#f1c40f']
+            });
+        }
+    </script>
+</body>
+</html>

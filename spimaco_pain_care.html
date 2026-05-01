@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Digestive Rescue Challenge - Station 2</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* --- GLOBAL VARIABLES --- */
+        :root {
+            --primary-bg: #111a28;
+            --glass-bg: rgba(25, 40, 60, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --neon-blue: #4facfe;
+            --neon-green: #2ecc71;
+            --neon-red: #ff4757;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            color: white;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            max-height: 900px;
+            background: linear-gradient(180deg, #1b2838 0%, #0d141e 100%);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: none;
+            flex-direction: column;
+            z-index: 1;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* --- UI COMPONENTS --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .top-logo {
+            height: 40px;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 15px;
+            padding: 5px 15px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            backdrop-filter: blur(5px);
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, var(--neon-blue), #00f2fe);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.5);
+            transition: transform 0.1s;
+        }
+        
+        .action-btn:active { transform: scale(0.95); }
+
+        /* --- DIALOGS --- */
+        .dialog-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            backdrop-filter: blur(5px);
+        }
+
+        .dialog-overlay.active { display: flex; }
+
+        .dialog-box {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px 20px;
+            width: 85%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .dialog-box h2 { color: var(--neon-blue); margin-bottom: 10px; }
+        .dialog-box p { color: #ccc; margin-bottom: 20px; line-height: 1.4; }
+
+        /* --- STAGE 1: MATCH GAME --- */
+        .match-area {
+            position: relative;
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+        }
+
+        #connection-lines {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 40%;
+            z-index: 2;
+        }
+
+        .match-item {
+            background: var(--glass-bg);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            height: 55px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            font-size: 0.75rem;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .right-col .match-item { background: white; color: black; }
+        .right-col .match-item img { height: 100%; object-fit: contain; }
+
+        .match-item.selected { border-color: var(--neon-blue); transform: scale(1.05); }
+        .match-item.matched { opacity: 0.5; pointer-events: none; border-color: var(--neon-green); }
+
+        /* Timer Penalty */
+        @keyframes flashRed {
+            0% { border-color: var(--neon-red); color: var(--neon-red); transform: scale(1.1); }
+            100% { border-color: rgba(255,255,255,0.4); color: white; transform: scale(1); }
+        }
+        .timer-penalty { animation: flashRed 0.5s ease; }
+
+        /* --- STAGE 2: MEMORY GAME --- */
+        .memory-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            width: 100%;
+            aspect-ratio: 1;
+            perspective: 1000px;
+        }
+
+        .memory-card {
+            width: 100%;
+            aspect-ratio: 1;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .memory-card.flipped { transform: rotateY(180deg); }
+
+        .memory-card-face {
+            position: absolute; inset: 0; border-radius: 10px;
+            backface-visibility: hidden; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .memory-card-front {
+            background: white;
+            border: 2px solid var(--neon-blue);
+            transform: rotateY(180deg);
+            padding: 5px;
+        }
+        .memory-card-front img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+
+        .memory-card-back {
+            background: var(--glass-bg);
+            border: 2px solid rgba(255,255,255,0.2);
+            flex-direction: column;
+            color: var(--neon-blue);
+            font-weight: 900;
+            font-size: 0.8rem;
+        }
+
+        .matched .memory-card-front { border: 3px solid var(--neon-green); background: rgba(46, 204, 113, 0.1); }
+
+        /* --- END SCREENS --- */
+        .icon-large { font-size: 60px; margin-bottom: 20px; display: inline-flex; justify-content: center; align-items: center; width: 100px; height: 100px; border-radius: 50%; }
+        .icon-success { color: var(--neon-green); border: 3px solid var(--neon-green); box-shadow: 0 0 20px rgba(46, 204, 113, 0.4); }
+        .icon-fail { color: #ff6b81; border: 3px solid var(--neon-red); box-shadow: 0 0 30px rgba(255, 71, 87, 0.5); }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        
+        <!-- START SCREEN -->
+        <div id="start-screen" class="screen active" style="justify-content: center; align-items: center; text-align: center; padding: 20px;">
+            <img src="assets/Pain Care Logo.png" alt="Game Logo" style="width: 200px; margin-bottom: 20px;" onerror="this.onerror=null; this.src='https://placehold.co/200x100/171777/27bdff?text=Spimaco+Logo'">
+            <h1 style="margin-bottom: 10px;">Fevadol Relief</h1>
+            <p style="color: #ccc; font-size: 0.9rem; line-height: 1.4; margin-bottom: 30px;">
+                Station 2 Challenge: Match the symptoms and test your memory!
+            </p>
+            <button class="action-btn" onclick="showStage1Dialog()">Start Challenge</button>
+        </div>
+
+        <!-- STAGE 1: MATCH GAME -->
+        <div id="stage1-screen" class="screen">
+            <header>
+                <img src="assets/Asset 1.png" alt="Logo" class="top-logo" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
+                <div class="stat-box" id="s1-timer">⏱️ 60s</div>
+            </header>
+            
+            <div class="match-area">
+                <svg id="connection-lines"></svg>
+                <div class="col left-col" id="s1-left-col"></div>
+                <div class="col right-col" id="s1-right-col"></div>
+            </div>
+        </div>
+
+        <!-- STAGE 2: MEMORY GAME -->
+        <div id="stage2-screen" class="screen">
+            <header>
+                <img src="assets/Asset 1.png" alt="Logo" class="top-logo" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
+                <div style="display: flex; gap: 10px;">
+                    <div class="stat-box" id="s2-timer">⏱️ 60s</div>
+                    <div class="stat-box" id="s2-matches">✔️ 0/8</div>
+                </div>
+            </header>
+            
+            <div class="memory-wrapper">
+                <div class="memory-grid" id="memory-grid">
+                    <!-- Cards injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- FINAL SUCCESS SCREEN -->
+        <div id="success-screen" class="screen" style="justify-content: center; align-items: center;">
+            <div class="dialog-box">
+                <div class="icon-large icon-success">✔️</div>
+                <h2 style="color: white; margin-bottom: 10px;">Station 2 Completed!</h2>
+                <p style="color:#ccc; margin-bottom: 20px;">You are eligible to take this station badge.</p>
+                <button class="action-btn" onclick="location.reload()">Finish</button>
+            </div>
+        </div>
+
+        <!-- FAIL SCREEN -->
+        <div id="fail-screen" class="screen" style="justify-content: center; align-items: center;">
+            <div class="dialog-box" style="background: #1e1111; border-color: rgba(255, 71, 87, 0.2);">
+                <div class="icon-large icon-fail">❌</div>
+                <h2 style="color: white; margin-bottom: 10px;">Time's Up!</h2>
+                <p style="color:#ccc; margin-bottom: 20px;">You ran out of time.</p>
+                <button class="action-btn" style="background: #e74c3c; box-shadow: none;" onclick="location.reload()">Restart</button>
+            </div>
+        </div>
+
+        <!-- DIALOGS -->
+        <div class="dialog-overlay" id="dialog-s1-intro">
+            <div class="dialog-box">
+                <div style="font-size: 50px; margin-bottom: 10px;">🔗</div>
+                <h2>Stage 1: Relief Rush</h2>
+                <p>Match the patient's symptom to the correct Fevadol product. <br><br>Careful: Wrong matches cost you 5 seconds!</p>
+                <button class="action-btn" onclick="startStage1()">Ready!</button>
+            </div>
+        </div>
+
+        <div class="dialog-overlay" id="dialog-s1-end">
+            <div class="dialog-box">
+                <h2>Matches Found!</h2>
+                <p>Great job identifying the right relief for every symptom. Transitioning to Stage 2...</p>
+                <!-- Kept the button for manual override, but added an auto-transition in JS -->
+                <button class="action-btn" style="margin-top: 15px;" onclick="showStage2Dialog()">Continue Now</button>
+            </div>
+        </div>
+
+        <div class="dialog-overlay" id="dialog-s2-intro">
+            <div class="dialog-box">
+                <div style="font-size: 50px; margin-bottom: 10px;">🧠</div>
+                <h2>Stage 2: Memory Stack</h2>
+                <p>Find all 8 matching pairs hidden in the grid before time runs out. Look out for the Saudi Made logo!</p>
+                <button class="action-btn" onclick="startStage2()">Start Stage 2</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /* --- UTILITY FUNCTIONS --- */
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        /* --- STAGE 1 LOGIC (MATCH GAME) --- */
+        const s1Pairs = [
+            { id: 'p1', symptom: 'Mild Pain / Fever', img: 'assets/fevadol.png' },
+            { id: 'p2', symptom: 'Strong Fever & Pain', img: 'assets/fevadol_plus.png' },
+            { id: 'p3', symptom: 'Need Quick Relief', img: 'assets/fevadol_fast.png' },
+            { id: 'p4', symptom: 'Severe Migraine', img: 'assets/fevadol_extra.png' },
+            { id: 'p5', symptom: 'Cold & Flu Symptoms', img: 'assets/fevadol_cold&flu.png' },
+            { id: 'p6', symptom: 'Sinus Congestion', img: 'assets/fevadol_sinus.png' },
+            { id: 'p7', symptom: 'Child with Fever', img: 'assets/fevadol_syrup.png' }
+        ];
+
+        let s1TimerInterval;
+        let s1TimeLeft = 60;
+        let s1SelectedLeft = null;
+        let s1MatchesCount = 0;
+        let autoTransitionTimeout;
+
+        function showStage1Dialog() {
+            showScreen('stage1-screen');
+            document.getElementById('dialog-s1-intro').classList.add('active');
+            renderS1Grid();
+        }
+
+        function renderS1Grid() {
+            const leftCol = document.getElementById('s1-left-col');
+            const rightCol = document.getElementById('s1-right-col');
+            leftCol.innerHTML = ''; rightCol.innerHTML = '';
+
+            let leftItems = shuffle([...s1Pairs]);
+            let rightItems = shuffle([...s1Pairs]);
+
+            leftItems.forEach(item => {
+                let el = document.createElement('div');
+                el.className = 'match-item left-item';
+                el.dataset.matchId = item.id;
+                el.innerText = item.symptom;
+                el.onclick = () => handleS1LeftClick(el);
+                leftCol.appendChild(el);
+            });
+
+            rightItems.forEach(item => {
+                let el = document.createElement('div');
+                el.className = 'match-item right-item';
+                el.dataset.matchId = item.id;
+                el.innerHTML = `<img src="${item.img}" onerror="this.onerror=null; this.src='https://placehold.co/100x50/white/red?text=Pack'">`;
+                el.onclick = () => handleS1RightClick(el);
+                rightCol.appendChild(el);
+            });
+        }
+
+        function startStage1() {
+            document.getElementById('dialog-s1-intro').classList.remove('active');
+            s1TimeLeft = 60;
+            s1MatchesCount = 0;
+            document.getElementById('connection-lines').innerHTML = '';
+            updateS1Timer();
+            
+            s1TimerInterval = setInterval(() => {
+                s1TimeLeft--;
+                updateS1Timer();
+                if(s1TimeLeft <= 0) {
+                    clearInterval(s1TimerInterval);
+                    showScreen('fail-screen');
+                }
+            }, 1000);
+        }
+
+        function updateS1Timer() {
+            document.getElementById('s1-timer').innerText = `⏱️ ${s1TimeLeft > 0 ? s1TimeLeft : 0}s`;
+        }
+
+        function handleS1LeftClick(el) {
+            if (el.classList.contains('matched')) return;
+            document.querySelectorAll('.left-item').forEach(item => item.classList.remove('selected'));
+            el.classList.add('selected');
+            s1SelectedLeft = el;
+        }
+
+        function handleS1RightClick(rightEl) {
+            if (rightEl.classList.contains('matched') || !s1SelectedLeft) return;
+
+            if (s1SelectedLeft.dataset.matchId === rightEl.dataset.matchId) {
+                drawS1Line(s1SelectedLeft, rightEl, true);
+                s1SelectedLeft.classList.remove('selected');
+                s1SelectedLeft.classList.add('matched');
+                rightEl.classList.add('matched');
+                s1SelectedLeft = null;
+                s1MatchesCount++;
+
+                if (s1MatchesCount === s1Pairs.length) {
+                    clearInterval(s1TimerInterval);
+                    
+                    // Show completion dialog and set auto transition
+                    setTimeout(() => {
+                        document.getElementById('dialog-s1-end').classList.add('active');
+                        
+                        // Automatically continue to Stage 2 after 2.5 seconds
+                        autoTransitionTimeout = setTimeout(() => {
+                            showStage2Dialog();
+                        }, 2500);
+
+                    }, 500);
+                }
+            } else {
+                drawS1Line(s1SelectedLeft, rightEl, false);
+                s1SelectedLeft.classList.remove('selected');
+                s1SelectedLeft = null;
+                
+                // Penalty
+                s1TimeLeft -= 5;
+                updateS1Timer();
+                let timerEl = document.getElementById('s1-timer');
+                timerEl.classList.remove('timer-penalty');
+                void timerEl.offsetWidth; 
+                timerEl.classList.add('timer-penalty');
+
+                if (s1TimeLeft <= 0) {
+                    clearInterval(s1TimerInterval);
+                    setTimeout(() => showScreen('fail-screen'), 500);
+                }
+            }
+        }
+
+        function drawS1Line(el1, el2, isCorrect) {
+            const svg = document.getElementById('connection-lines');
+            const svgRect = svg.getBoundingClientRect();
+            const r1 = el1.getBoundingClientRect();
+            const r2 = el2.getBoundingClientRect();
+
+            const startX = r1.right - svgRect.left;
+            const startY = (r1.top + r1.bottom) / 2 - svgRect.top;
+            const endX = r2.left - svgRect.left;
+            const endY = (r2.top + r2.bottom) / 2 - svgRect.top;
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            const d = `M ${startX} ${startY} C ${startX + 40} ${startY}, ${endX - 40} ${endY}, ${endX} ${endY}`;
+            
+            path.setAttribute("d", d);
+            path.setAttribute("stroke", isCorrect ? "#4facfe" : "#ff4757");
+            path.setAttribute("stroke-width", "3");
+            path.setAttribute("fill", "none");
+            svg.appendChild(path);
+
+            if (!isCorrect) {
+                setTimeout(() => { if (path.parentNode) svg.removeChild(path); }, 500);
+            }
+        }
+
+        /* --- STAGE 2 LOGIC (MEMORY GAME) --- */
+        const s2Images = [
+            'assets/fevadol.png',
+            'assets/fevadol_plus.png',
+            'assets/fevadol_fast.png',
+            'assets/fevadol_extra.png',
+            'assets/fevadol_cold&flu.png',
+            'assets/fevadol_sinus.png',
+            'assets/fevadol_syrup.png',
+            'assets/saudi_made_logo.png' // The 8th required asset
+        ];
+
+        let s2TimerInterval;
+        let s2TimeLeft = 60;
+        let s2FirstCard = null;
+        let s2SecondCard = null;
+        let s2LockBoard = false;
+        let s2MatchesCount = 0;
+
+        function showStage2Dialog() {
+            // Clear auto transition if the user clicked the button manually
+            clearTimeout(autoTransitionTimeout); 
+            
+            document.getElementById('dialog-s1-end').classList.remove('active');
+            showScreen('stage2-screen');
+            document.getElementById('dialog-s2-intro').classList.add('active');
+            renderS2Grid();
+        }
+
+        function renderS2Grid() {
+            const grid = document.getElementById('memory-grid');
+            grid.innerHTML = '';
+            
+            let deck = shuffle([...s2Images, ...s2Images]);
+
+            deck.forEach(imgSrc => {
+                const card = document.createElement('div');
+                card.className = 'memory-card';
+                card.dataset.id = imgSrc;
+                
+                card.innerHTML = `
+                    <div class="memory-card-face memory-card-front">
+                        <img src="${imgSrc}" onerror="this.onerror=null; this.src='https://placehold.co/100/white/red?text=Asset'">
+                    </div>
+                    <div class="memory-card-face memory-card-back">
+                        <img src="assets/Asset 1.png" alt="Logo" style="width: 80%;" onerror="this.onerror=null; this.src='https://placehold.co/60x30/white/red?text=Logo'">
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => flipCard(card));
+                grid.appendChild(card);
+            });
+        }
+
+        function startStage2() {
+            document.getElementById('dialog-s2-intro').classList.remove('active');
+            s2TimeLeft = 60;
+            s2MatchesCount = 0;
+            document.getElementById('s2-matches').innerText = `✔️ 0/8`;
+            updateS2Timer();
+
+            // Reveal cards briefly
+            s2LockBoard = true;
+            const cards = document.querySelectorAll('.memory-card');
+            cards.forEach(c => c.classList.add('flipped'));
+
+            setTimeout(() => {
+                cards.forEach(c => c.classList.remove('flipped'));
+                setTimeout(() => {
+                    s2LockBoard = false;
+                    s2TimerInterval = setInterval(() => {
+                        s2TimeLeft--;
+                        updateS2Timer();
+                        if (s2TimeLeft <= 0) {
+                            clearInterval(s2TimerInterval);
+                            showScreen('fail-screen');
+                        }
+                    }, 1000);
+                }, 400);
+            }, 2000);
+        }
+
+        function updateS2Timer() {
+            document.getElementById('s2-timer').innerText = `⏱️ ${s2TimeLeft > 0 ? s2TimeLeft : 0}s`;
+        }
+
+        function flipCard(card) {
+            if (s2LockBoard || card === s2FirstCard || card.classList.contains('matched')) return;
+
+            card.classList.add('flipped');
+
+            if (!s2FirstCard) {
+                s2FirstCard = card;
+                return;
+            }
+
+            s2SecondCard = card;
+            checkS2Match();
+        }
+
+        function checkS2Match() {
+            if (s2FirstCard.dataset.id === s2SecondCard.dataset.id) {
+                s2FirstCard.classList.add('matched');
+                s2SecondCard.classList.add('matched');
+                s2MatchesCount++;
+                document.getElementById('s2-matches').innerText = `✔️ ${s2MatchesCount}/8`;
+                resetS2Board();
+
+                if (s2MatchesCount === 8) {
+                    clearInterval(s2TimerInterval);
+                    setTimeout(() => {
+                        showScreen('success-screen');
+                        confetti({
+                            particleCount: 150, spread: 80, origin: { y: 0.6 },
+                            colors: ['#2ecc71', '#4facfe', '#ffffff', '#f1c40f']
+                        });
+                    }, 500);
+                }
+            } else {
+                s2LockBoard = true;
+                setTimeout(() => {
+                    s2FirstCard.classList.remove('flipped');
+                    s2SecondCard.classList.remove('flipped');
+                    resetS2Board();
+                }, 1000);
+            }
+        }
+
+        function resetS2Board() {
+            [s2FirstCard, s2SecondCard, s2LockBoard] = [null, null, false];
+        }
+    </script>
+</body>
+</html>
