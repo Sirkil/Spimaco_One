@@ -1,569 +1,722 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Captain ONE: Blade of Confidence</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <style>
-        /* --- CSS STYLES --- */
-        :root {
-            --primary-bg: #09101a;
-            --glass-bg: rgba(15, 25, 40, 0.85);
-            --neon-blue: #4facfe;
-            --neon-green: #2ecc71;
-            --neon-red: #ff4757;
-            --neon-orange: #ff7e5f; /* For SNAFI */
-            --neon-cyan: #00f2fe; /* For LEGAM */
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Station 4 - Endless Runner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            user-select: none;
-        }
+  <style>
+    :root {
+      --blue: #4facfe;
+      --cyan: #00f2fe;
+      --green: #4ade80;
+      --red: #ff4757;
+      --orange: #ffa502;
+    }
 
-        body {
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
 
-        /* Mobile Responsive Game Container */
-        #game-container {
-            width: 100%;
-            max-width: 450px;
-            height: 100%;
-            max-height: 900px;
-            background-color: var(--primary-bg);
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 0 30px rgba(0,0,0,1);
-        }
+    body {
+      background-color: #0d141e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      color: white;
+    }
 
-        .screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-            flex-direction: column;
-            z-index: 1;
-        }
+    #app-container {
+      width: 100%;
+      max-width: 450px;
+      height: 100%;
+      max-height: 900px;
+      aspect-ratio: 9 / 16;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    }
 
-        .screen.active {
-            display: flex;
-        }
+    .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; z-index: 10; }
+    .screen.active { display: flex; }
 
-        /* --- Start Screen --- */
-        #start-screen {
-            background: linear-gradient(to bottom, #112b3c, #09101a);
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            text-align: center;
-        }
+    /* --- Start & Dialog Screens --- */
+    #start-screen, #dialog-screen, #result-screen {
+      background: linear-gradient(to bottom, #112b3c, #09101a);
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+    }
 
-        .game-logo-large {
-            width: 150px;
-            margin-bottom: 20px;
-        }
+    .title { font-size: 3.2rem; font-weight: 900; line-height: 1.1; margin-bottom: 10px; }
+    .subtitle { color: #ccc; font-size: 1.1rem; margin-bottom: 30px; }
 
-        .start-btn, .restart-btn {
-            background: linear-gradient(135deg, var(--neon-blue), var(--neon-cyan));
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 30px;
-            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.5);
-            transition: transform 0.1s;
-        }
-        
-        .start-btn:active, .restart-btn:active {
-            transform: scale(0.95);
-        }
+    .btn {
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(79, 172, 254, 0.5);
+      transition: transform 0.1s;
+      margin-top: 10px;
+    }
+    .btn:active { transform: scale(0.95); }
 
-        /* --- Main Game Screen --- */
-        #game-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 50% 50%, #1e2d40 0%, #060b13 100%);
-            z-index: 0;
-        }
+    .dialog-box {
+      background: rgba(15, 25, 40, 0.85);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 30px 20px;
+      width: 90%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      backdrop-filter: blur(10px);
+    }
 
-        .game-ui {
-            position: relative;
-            z-index: 2;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            padding: 20px 15px;
-        }
+    /* --- Game UI & Panning Background --- */
+    #game-world {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: url('assets/scene.jpg'); /* New Extended Image */
+      background-size: auto 100%; /* Locks height to screen, allows width to be long */
+      background-position: 0% 0%; /* Starts at the far left edge */
+      z-index: 1;
+      overflow: hidden;
+    }
 
-        /* Header & Top Elements */
-        header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
+    .run-bg {
+      /* Pans smoothly from the far left (0%) to the far right (100%) over 80 seconds */
+      animation: panWideScene 80s linear forwards; 
+    }
 
-        .top-center-ui {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-            margin-top: 10px;
-        }
+    @keyframes panWideScene {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 100% 0%; }
+    }
 
-        .timer-circle {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: 3px solid var(--neon-cyan);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-size: 1.8rem;
-            font-weight: bold;
-            background: rgba(0,0,0,0.5);
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.4), inset 0 0 10px rgba(0, 242, 254, 0.2);
-            position: relative;
-            transition: all 0.3s ease;
-        }
-        
-        .timer-circle span {
-            font-size: 0.7rem;
-            font-weight: normal;
-            margin-top: -5px;
-        }
+    .ground {
+      position: absolute;
+      bottom: 0; left: 0; width: 200%; 
+      height: 180px; /* Raised Ground */
+      background: #2c3e50;
+      border-top: 12px solid #34495e;
+      z-index: 2;
+    }
 
-        /* Floating +15s animation */
-        .time-bonus {
-            position: absolute;
-            top: 50%;
-            left: 120%;
-            transform: translateY(-50%);
-            color: var(--neon-green);
-            font-size: 1.5rem;
-            font-weight: bold;
-            opacity: 0;
-            text-shadow: 0 0 10px var(--neon-green);
-        }
+    .hud {
+      position: absolute;
+      top: 20px; left: 0; width: 100%;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 5;
+    }
 
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translate(0, 0); }
-            100% { opacity: 0; transform: translate(0, -30px); }
-        }
-        .animate-bonus { animation: floatUp 1s ease-out forwards; }
-        .timer-flash { box-shadow: 0 0 30px var(--neon-green), inset 0 0 15px var(--neon-green) !important; border-color: var(--neon-green) !important; }
+    .hud-box {
+      background: rgba(0,0,0,0.6);
+      border: 2px solid rgba(255,255,255,0.3);
+      padding: 8px 18px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 1.2rem;
+      text-align: center;
+      backdrop-filter: blur(5px);
+    }
 
-        .power-bar-container {
-            width: 160px;
-            margin-top: 15px;
-            text-align: center;
-        }
-        
-        .power-bar-label {
-            color: #ccc;
-            font-size: 0.75rem;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+    .energy-bar-container {
+      width: 150px;
+      height: 14px;
+      background: rgba(0,0,0,0.5);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 7px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
 
-        .power-bar {
-            width: 100%;
-            height: 8px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 5px;
-            border: 1px solid rgba(255,255,255,0.2);
-            overflow: hidden;
-        }
+    .energy-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--orange), yellow);
+      box-shadow: 0 0 10px yellow;
+      transition: width 0.1s linear;
+    }
 
-        .power-fill {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, var(--neon-blue), var(--neon-cyan));
-            box-shadow: 0 0 10px var(--neon-cyan);
-            transition: width 0.5s ease-out;
-        }
+    /* --- Enlarged Game Objects --- */
+    #player {
+      position: absolute;
+      left: 5%; /* Pulled back slightly for better reaction time */
+      bottom: 180px; 
+      width: 180px;  /* Massively Enlarged Knight */
+      height: 220px;
+      z-index: 4;
+      transition: filter 0.3s ease;
+    }
 
-        /* Hero Image Area */
-        .hero-container {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
+    #player img { width: 100%; height: 100%; object-fit: contain; }
 
-        .hero-img {
-            max-width: 100%;
-            max-height: 400px;
-            object-fit: contain;
-            transition: all 0.5s ease;
-            filter: drop-shadow(0 0 20px rgba(0, 242, 254, 0.2));
-        }
+    .snafi-glow {
+      filter: drop-shadow(0 0 20px var(--orange)) drop-shadow(0 0 40px yellow) !important;
+    }
 
-        /* Power Up Effect */
-        .hero-flash {
-            animation: powerUpFlash 0.8s ease-out;
-        }
+    .game-item {
+      position: absolute;
+      bottom: 180px; 
+      width: 90px; /* Scaled up Items */
+      height: 90px;
+      z-index: 3;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-        @keyframes powerUpFlash {
-            0% { filter: brightness(1) drop-shadow(0 0 20px rgba(0, 242, 254, 0.2)); transform: scale(1); }
-            50% { filter: brightness(2) drop-shadow(0 0 50px var(--neon-orange)); transform: scale(1.05); }
-            100% { filter: brightness(1) drop-shadow(0 0 30px var(--neon-orange)); transform: scale(1); }
-        }
+    .shelf {
+      position: absolute;
+      bottom: 380px; 
+      width: 320px;  /* Wider shelf */
+      height: 40px;  /* Thicker shelf */
+      background: linear-gradient(to bottom, #2ecc71, #27ae60);
+      border-radius: 12px;
+      z-index: 2;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+      border-top: 4px solid #4ade80;
+    }
 
-        /* Action Buttons Area */
-        .action-area {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 20px 30px 20px;
-            gap: 20px;
-        }
+    /* --- Controls --- */
+    .jump-btn-area {
+      position: absolute;
+      bottom: 30px; 
+      right: 20px; 
+      z-index: 10;
+      width: 110px;
+      height: 110px;
+      background: rgba(255,255,255,0.15);
+      border: 4px solid rgba(255,255,255,0.5);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: white;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    }
+    .jump-btn-area:active { 
+        background: rgba(255,255,255,0.4); 
+        transform: scale(0.92); 
+    }
 
-        .action-btn {
-            flex: 1;
-            background: var(--glass-bg);
-            border-radius: 15px;
-            padding: 15px 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
+    /* --- Toasts & Effects --- */
+    .toast {
+      position: absolute;
+      top: -60px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--green);
+      color: #000;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: bold;
+      z-index: 20;
+      opacity: 0;
+      transition: all 0.3s;
+      box-shadow: 0 5px 15px rgba(74, 222, 128, 0.5);
+    }
+    .toast.show { top: 90px; opacity: 1; }
 
-        .action-btn:active:not(.disabled) {
-            transform: scale(0.95);
-        }
+    .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-4px, 0, 0); }
+      20%, 80% { transform: translate3d(6px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-10px, 0, 0); }
+      40%, 60% { transform: translate3d(10px, 0, 0); }
+    }
 
-        .action-btn.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            filter: grayscale(1);
-        }
+    .floating-heart {
+      position: absolute;
+      font-size: 3rem;
+      pointer-events: none;
+      z-index: 50;
+      animation: floatHeart 1.5s ease-out forwards;
+    }
+    @keyframes floatHeart {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--tx), var(--ty)) scale(2); opacity: 0; }
+    }
 
-        .btn-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #000;
-        }
+    /* --- Result Screen --- */
+    .tally-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.1);
+      margin: 10px 0;
+      padding: 15px 25px;
+      border-radius: 10px;
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+    .tally-row img { width: 45px; height: 45px; object-fit: contain; }
 
-        .btn-icon img {
-            width: 90%;
-            border-radius: 50%;
-        }
-
-        .btn-left { border: 2px solid var(--neon-orange); box-shadow: 0 0 15px rgba(255, 126, 95, 0.3); }
-        .btn-left .btn-icon { box-shadow: 0 0 20px var(--neon-orange); }
-        .btn-left h3 { color: var(--neon-orange); }
-
-        .btn-right { border: 2px solid var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 242, 254, 0.3); }
-        .btn-right .btn-icon { box-shadow: 0 0 20px var(--neon-cyan); }
-        .btn-right h3 { color: var(--neon-cyan); }
-
-        .action-btn h3 {
-            font-size: 1.1rem;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-        }
-
-        .action-btn p {
-            color: white;
-            font-size: 0.75rem;
-            line-height: 1.2;
-            font-style: italic;
-        }
-
-        /* --- End Screens --- */
-        .result-box {
-            background: var(--glass-bg);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 20px;
-            padding: 40px 20px;
-            width: 85%;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            backdrop-filter: blur(15px);
-        }
-
-        #success-screen {
-            background: url('https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80') center/cover;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #fail-screen {
-            background: rgba(10, 15, 25, 0.95);
-            justify-content: center;
-            align-items: center;
-        }
-
-        .fail-box {
-            background: #1e1111;
-            border-color: rgba(255, 71, 87, 0.3);
-            box-shadow: 0 10px 40px rgba(255,71,87,0.2);
-        }
-
-        .icon-large { font-size: 60px; margin-bottom: 20px; display: inline-flex; justify-content: center; align-items: center; width: 100px; height: 100px; border-radius: 50%; }
-        .icon-success { color: var(--neon-green); border: 3px solid var(--neon-green); box-shadow: 0 0 20px rgba(46, 204, 113, 0.4); }
-        .icon-fail { color: #ff6b81; border: 3px solid var(--neon-red); box-shadow: 0 0 30px rgba(255, 71, 87, 0.5); }
-        .result-text { color: white; font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
-        .result-subtext { color: #ccc; font-size: 0.95rem; margin-bottom: 30px; }
-
-    </style>
+  </style>
 </head>
 <body>
 
-    <div id="game-container">
-        
-        <div id="start-screen" class="screen active">
-            <img src="https://via.placeholder.com/150x150.png?text=HERO+ICON" alt="Hero Icon" class="game-logo-large" style="border-radius: 50%; box-shadow: 0 0 20px var(--neon-blue);">
-            <h1 style="color: white; margin-bottom: 10px; font-size: 1.8rem;">Captain ONE:<br>Blade of Confidence</h1>
-            <p style="color: #ccc; font-size: 0.95rem; line-height: 1.5; margin-top: 15px;">
-                Complete the mission of strength and endurance.<br><br>
-                Activate your powers to survive. Press both buttons to fully power up before time runs out!
-            </p>
-            <button class="start-btn" onclick="startGame()">Start Mission</button>
-        </div>
+  <div id="app-container">
 
-        <div id="main-screen" class="screen">
-            <div id="game-bg"></div>
-            
-            <div class="game-ui">
-                <header>
-                    <img src="assets/Asset 1.png" alt="Spimaco" style="width: 200px;">
-                    
-                    <div class="top-center-ui">
-                        <div class="timer-circle" id="timer-ui">
-                            <div id="timer-display">60</div>
-                            <span>sec</span>
-                            <div class="time-bonus" id="time-bonus">+15s</div>
-                        </div>
-                        <div class="power-bar-container">
-                            <div class="power-bar-label">Power Bar</div>
-                            <div class="power-bar">
-                                <div class="power-fill" id="power-fill"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style="width: 100px;"></div> </header>
-
-                <div class="hero-container">
-                    <img src="https://via.placeholder.com/300x400.png?text=DEFAULT+HERO" id="hero-image" class="hero-img" alt="Captain ONE">
-                </div>
-
-                <div class="action-area">
-                    <div class="action-btn btn-left" id="btn-snafi" onclick="useSnafi()">
-                        <div class="btn-icon">
-                            <img src="assets/snafi.png" alt="Snafi Icon">
-                        </div>
-                        <h3>SNAFI</h3>
-                        <p>powers the strike.</p>
-                    </div>
-
-                    <div class="action-btn btn-right" id="btn-legam" onclick="useLegam()">
-                        <div class="btn-icon">
-                            <img src="assets/legam.png" alt="Legam Icon">
-                        </div>
-                        <h3>LEGAM</h3>
-                        <p>extends the mission.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="success-screen" class="screen">
-            <div class="result-box">
-                <div class="icon-large icon-success">✔️</div>
-                <div class="result-text">Mission Accomplished</div>
-                <div class="result-subtext">You are eligible to take this station badge</div>
-                <button class="restart-btn" onclick="resetGameToStart()">Finish</button>
-            </div>
-        </div>
-
-        <div id="fail-screen" class="screen">
-            <div class="result-box fail-box">
-                <div class="icon-large icon-fail">❌</div>
-                <div class="result-text">Mission Failed</div>
-                <div class="result-subtext">You didn't power up in time.</div>
-                <button class="restart-btn" style="background: #e74c3c; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.5); width: 100%; border-radius: 20px;" onclick="resetGameToStart()">Retry Mission</button>
-            </div>
-        </div>
-
+    <!-- START SCREEN -->
+    <div id="start-screen" class="screen active">
+      <img src="assets/Men Health Logo.png" alt="Spimaco" style="max-width: 220px; margin-bottom: 20px;" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
+      <div class="title">Health Runner</div>
+      <p class="subtitle">Complete the 7 scenes of vitality!</p>
+      <button class="btn" onclick="showDialog()">Start Game</button>
     </div>
 
-    <script>
-        /* --- GAME CONFIGURATION --- */
-        // Replace these URLs with your actual game assets
-        const defaultHeroImage = "https://via.placeholder.com/300x400.png?text=Base+Weapon";
-        const poweredHeroImage = "https://via.placeholder.com/300x400.png?text=Glowing+Sword";
+    <!-- DIALOG SCREEN -->
+    <div id="dialog-screen" class="screen">
+      <div class="dialog-box">
+        <h2 style="font-size: 2rem; margin-bottom: 15px;">How to Play</h2>
+        <ul style="text-align: left; color: #ccc; font-size: 1.05rem; line-height: 1.8; list-style: none;">
+          <li>❤️ <strong>Heart:</strong> Collect for points.</li>
+          <li>🪩 <strong>Spike Ball:</strong> Avoid! (-5s penalty)</li>
+          <li>🔵 <strong>Legam:</strong> Adds +15 seconds to timer.</li>
+          <li>🟡 <strong>Snafi:</strong> Grants 20 seconds of pure power glow!</li>
+        </ul>
+        <br>
+        <p><strong>Note:</strong> Jump on top of the green shelves to reach high items or avoid spikes on the ground!</p>
+        <button class="btn" onclick="startGame()">I'm Ready!</button>
+      </div>
+    </div>
 
-        /* --- GAME STATE --- */
-        let timerInterval;
-        let timeLeft = 60;
-        let snafiUsed = false;
-        let legamUsed = false;
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="screen">
+      <div id="game-world">
+        <div class="ground" id="ground"></div>
+        
+        <!-- Player -->
+        <div id="player">
+          <img src="assets/knight (2).gif" onerror="this.onerror=null; this.src='https://placehold.co/180x220/transparent/white?text=K'">
+        </div>
+      </div>
 
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
+      <div class="hud">
+        <div style="display: flex; flex-direction: column;">
+          <div class="hud-box">❤️ <span id="hud-hearts">0</span></div>
+          <div class="energy-bar-container"><div class="energy-fill" id="energy-fill"></div></div>
+        </div>
+        <div class="hud-box">⏱️ <span id="hud-timer">30</span>s</div>
+      </div>
+
+      <div id="toast-msg" class="toast">Message</div>
+
+      <!-- Jump Button mapped to Pointer Down for instant mobile response -->
+      <div class="jump-btn-area" onpointerdown="jump()">JUMP</div>
+    </div>
+
+    <!-- RESULT SCREEN -->
+    <div id="result-screen" class="screen">
+      <div class="title" id="result-title" style="color: var(--green);">Victory!</div>
+      <p style="color: #ccc; margin-bottom: 20px; font-size: 1.2rem;">You completed the run.</p>
+      
+      <div style="width: 100%; max-width: 350px; text-align: left;">
+        <div class="tally-row">
+          <span style="font-size: 2.5rem; filter: drop-shadow(0 0 5px red);">❤️</span>
+          <span>x <span id="tally-hearts">0</span></span>
+        </div>
+        <div class="tally-row">
+          <img src="assets/snafi.png" onerror="this.onerror=null; this.src='https://placehold.co/40/yellow/black?text=S'">
+          <span>x <span id="tally-snafi">0</span></span>
+        </div>
+        <div class="tally-row">
+          <img src="assets/legam.png" onerror="this.onerror=null; this.src='https://placehold.co/40/cyan/black?text=L'">
+          <span>x <span id="tally-legam">0</span></span>
+        </div>
+      </div>
+
+      <button class="btn" style="margin-top: 30px;" onclick="location.reload()">Play Again</button>
+    </div>
+
+  </div>
+
+  <script>
+    // --- SYSTEM UTILS ---
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+    function showDialog() { showScreen('dialog-screen'); }
+
+    // --- GAME VARIABLES ---
+    let isGameRunning = false;
+    let gameLoopId;
+    let lastFrameTime = 0;
+    let elapsedTime = 0; 
+    
+    // Timer
+    let countdownTimer = 30;
+    let countdownInterval;
+
+    // Physics & Player
+    const playerEl = document.getElementById('player');
+    const groundHeight = 180; 
+    const shelfLogicalHeight = 160; 
+    let playerY = 0; 
+    let prevPlayerY = 0;
+    let playerVy = 0;
+    const gravity = -3500; 
+    const jumpPower = 1200; 
+    let isJumping = false;
+
+    // Environment
+    const gameSpeed = 400; // Pixels per second
+    let backgroundOffset = 0;
+    let generatedLevel = [];
+
+    // Stats & Power
+    let stats = { hearts: 0, snafi: 0, legam: 0 };
+    let snafiTimeLeft = 0; 
+    const SNAFI_MAX_TIME = 20000; 
+    let toastTimeout;
+
+    // Assets Fallbacks
+    const ASSETS = {
+        heart: '❤️',
+        spike: '🪩', 
+        snafi: 'assets/snafi.png',
+        legam: 'assets/legam.png'
+    };
+
+    // --- DYNAMIC LEVEL GENERATOR ---
+    function generateLevel() {
+      let data = [];
+      let t = 2.0;
+
+      // The 6 active scenes with exact quotas required
+      const scenes = [
+        ['spike', 'heart', 'heart', 'legam'], // S2
+        ['heart', 'heart', 'snafi', 'spike'], // S3
+        ['heart', 'heart', 'spike', 'legam'], // S4
+        ['heart', 'heart', 'legam', 'spike'], // S5
+        ['snafi', 'heart', 'heart', 'spike'], // S6
+        ['legam', 'heart', 'heart', 'spike']  // S7
+      ];
+
+      scenes.forEach(sceneItems => {
+        // Randomize order within the scene
+        sceneItems.sort(() => Math.random() - 0.5); 
+
+        sceneItems.forEach(type => {
+          let layout = Math.floor(Math.random() * 3); 
+          
+          if (layout === 0) {
+            data.push({ time: t, type: type, y: 0 });
+            t += 1.2 + Math.random() * 0.8;
+          } else if (layout === 1) {
+            data.push({ time: t, type: 'shelf' });
+            data.push({ time: t + 0.2, type: type, y: shelfLogicalHeight + 25 });
+            t += 1.8 + Math.random() * 0.8; 
+          } else if (layout === 2) {
+            data.push({ time: t, type: 'shelf' });
+            data.push({ time: t + 0.2, type: type, y: 0 }); 
+            t += 1.8 + Math.random() * 0.8;
+          }
+        });
+        
+        t += 1.5; // Breather gap
+      });
+
+      data.push({ time: t + 2, type: 'end' });
+      return data;
+    }
+
+    // --- CORE MECHANICS ---
+    function startGame() {
+        showScreen('game-screen');
+        isGameRunning = true;
+        elapsedTime = 0;
+        spawnIndex = 0;
+        countdownTimer = 30;
+        stats = { hearts: 0, snafi: 0, legam: 0 };
+        snafiTimeLeft = 0;
+        
+        // Trigger Background Panning Animation
+        document.getElementById('game-world').classList.add('run-bg');
+        
+        generatedLevel = generateLevel();
+
+        document.getElementById('hud-hearts').innerText = "0";
+        document.getElementById('hud-timer').innerText = countdownTimer;
+        document.getElementById('energy-fill').style.width = "0%";
+        playerEl.classList.remove('snafi-glow');
+        
+        // Clear old items & shelves
+        document.querySelectorAll('.game-item, .shelf').forEach(el => el.remove());
+
+        // Start Clocks
+        clearInterval(countdownInterval);
+        countdownInterval = setInterval(() => {
+            if(!isGameRunning) return;
+            countdownTimer--;
+            document.getElementById('hud-timer').innerText = countdownTimer;
+            if(countdownTimer <= 0) endGame(false);
+        }, 1000);
+
+        lastFrameTime = performance.now();
+        gameLoopId = requestAnimationFrame(gameLoop);
+    }
+
+    function jump() {
+        if (!isGameRunning || isJumping) return;
+        playerVy = jumpPower;
+        isJumping = true;
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if(e.code === 'Space' || e.code === 'ArrowUp') jump();
+    });
+
+    function showToast(msg, bgColor) {
+        const toast = document.getElementById('toast-msg');
+        toast.innerText = msg;
+        toast.style.background = bgColor;
+        toast.classList.add('show');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    function spawnObject(data) {
+        if (data.type === 'end') { endGame(true); return; }
+
+        const el = document.createElement('div');
+        const startX = window.innerWidth + 50; 
+        el.style.left = startX + 'px';
+        el.dataset.x = startX;
+
+        // Shelf Spawning
+        if (data.type === 'shelf') {
+            el.className = 'shelf';
+            el.style.bottom = `${groundHeight + shelfLogicalHeight}px`;
+            document.getElementById('game-world').appendChild(el);
+            return;
         }
 
-        function startGame() {
-            // Reset State
-            timeLeft = 60;
-            snafiUsed = false;
-            legamUsed = false;
-            
-            // Reset UI Elements
-            document.getElementById('timer-display').innerText = timeLeft;
-            document.getElementById('hero-image').src = defaultHeroImage;
-            document.getElementById('hero-image').classList.remove('hero-flash');
-            document.getElementById('hero-image').style.filter = "drop-shadow(0 0 20px rgba(0, 242, 254, 0.2))";
-            
-            document.getElementById('btn-snafi').classList.remove('disabled');
-            document.getElementById('btn-legam').classList.remove('disabled');
-            document.getElementById('power-fill').style.width = "0%";
-            
-            // Hide Bonus Animation if it was running
-            const bonusEl = document.getElementById('time-bonus');
-            bonusEl.classList.remove('animate-bonus');
-            document.getElementById('timer-ui').classList.remove('timer-flash');
+        // Item Spawning
+        el.className = 'game-item';
+        el.dataset.type = data.type;
+        el.style.bottom = `${groundHeight + data.y}px`;
 
-            showScreen('main-screen');
-            
-            // Start Timer
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                document.getElementById('timer-display').innerText = timeLeft;
-                if(timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    showEndScreen(false); // Out of time
+        if (data.type === 'heart') {
+            el.innerHTML = `<span style="font-size:4.5rem; filter: drop-shadow(0 0 10px rgba(255,0,0,0.6));">❤️</span>`;
+        } else if (data.type === 'spike') {
+            el.innerHTML = `<img src="assets/spike.png" style="width:100px; height:100px;" onerror="this.onerror=null; this.outerHTML='<span style=\\'font-size:5rem;\\'>💣</span>'">`;
+            el.style.width = "100px"; el.style.height = "100px";
+        } else {
+            el.innerHTML = `<img src="${ASSETS[data.type]}" style="width:100%;height:100%;object-fit:contain;" onerror="this.onerror=null; this.outerHTML='<span style=\\'font-size:4.5rem;\\'>📦</span>'">`;
+        }
+
+        document.getElementById('game-world').appendChild(el);
+    }
+
+    function gameLoop(now) {
+        if (!isGameRunning) return;
+        let dt = (now - lastFrameTime) / 1000;
+        lastFrameTime = now;
+
+        if (dt > 0.1) dt = 0.1; // Cap dt
+
+        elapsedTime += dt;
+        prevPlayerY = playerY;
+
+        // 1. Player Physics & Gravity
+        playerVy += gravity * dt;
+        playerY += playerVy * dt;
+
+        // 2. Check Platform Collisions
+        let floorY = 0; // Default floor
+        const pRect = playerEl.getBoundingClientRect();
+        
+        // Define logical bounds for the enlarged Knight
+        const pLeft = window.innerWidth * 0.05; 
+        const pRight = pLeft + 180; 
+
+        document.querySelectorAll('.shelf').forEach(shelf => {
+            let currentX = parseFloat(shelf.dataset.x);
+            currentX -= gameSpeed * dt;
+            shelf.dataset.x = currentX;
+            shelf.style.left = currentX + 'px';
+
+            const sLeft = currentX;
+            const sRight = currentX + 320; // Expanded shelf width
+
+            if (pRight - 40 > sLeft && pLeft + 40 < sRight) { 
+                if (prevPlayerY >= shelfLogicalHeight - 10) { 
+                    floorY = shelfLogicalHeight;
                 }
-            }, 1000);
+            }
+
+            if (currentX < -350) shelf.remove();
+        });
+
+        // 3. Apply Floor Bounds
+        if (playerY <= floorY && playerVy <= 0) {
+            playerY = floorY;
+            playerVy = 0;
+            isJumping = false;
         }
 
-        function useSnafi() {
-            if (snafiUsed) return; // Prevent multiple presses
+        playerEl.style.bottom = `${groundHeight + playerY}px`;
 
-            snafiUsed = true;
-            
-            // Disable Button Visually
-            document.getElementById('btn-snafi').classList.add('disabled');
-
-            // Change Image & Add Flash Effect
-            const heroImg = document.getElementById('hero-image');
-            heroImg.src = poweredHeroImage;
-            
-            // Remove animation class to reset it, then add it back to trigger CSS animation
-            heroImg.classList.remove('hero-flash');
-            void heroImg.offsetWidth; // trigger reflow
-            heroImg.classList.add('hero-flash');
-            
-            // Keep the orange glow after flash
-            setTimeout(() => {
-                heroImg.style.filter = "drop-shadow(0 0 30px var(--neon-orange))";
-            }, 800);
-
-            updatePowerBar();
-            checkWinCondition();
-        }
-
-        function useLegam() {
-            if (legamUsed) return; // Prevent multiple presses
-
-            legamUsed = true;
-            
-            // Disable Button Visually
-            document.getElementById('btn-legam').classList.add('disabled');
-
-            // Add Time
-            timeLeft += 15;
-            document.getElementById('timer-display').innerText = timeLeft;
-
-            // Trigger UI Bonus Animation
-            const bonusEl = document.getElementById('time-bonus');
-            const timerUi = document.getElementById('timer-ui');
-            
-            bonusEl.classList.remove('animate-bonus');
-            void bonusEl.offsetWidth; // trigger reflow
-            bonusEl.classList.add('animate-bonus');
-            
-            timerUi.classList.add('timer-flash');
-            setTimeout(() => {
-                timerUi.classList.remove('timer-flash');
-            }, 500);
-
-            updatePowerBar();
-            checkWinCondition();
-        }
-
-        function updatePowerBar() {
-            let powerLevel = 0;
-            if (snafiUsed) powerLevel += 50;
-            if (legamUsed) powerLevel += 50;
-            document.getElementById('power-fill').style.width = powerLevel + "%";
-        }
-
-        function checkWinCondition() {
-            if (snafiUsed && legamUsed) {
-                // Both buttons pressed successfully before time ran out!
-                clearInterval(timerInterval);
-                
-                // Wait just a moment so the user sees the 100% bar before the screen transitions
-                setTimeout(() => {
-                    showEndScreen(true);
-                }, 1200);
+        // 4. Snafi Energy Drain
+        if (snafiTimeLeft > 0) {
+            snafiTimeLeft -= dt * 1000;
+            let percent = (snafiTimeLeft / SNAFI_MAX_TIME) * 100;
+            document.getElementById('energy-fill').style.width = `${percent}%`;
+            if (snafiTimeLeft <= 0) {
+                playerEl.classList.remove('snafi-glow');
             }
         }
 
-        function showEndScreen(isSuccess) {
-            if (isSuccess) {
-                showScreen('success-screen');
-                confetti({
-                    particleCount: 150,
-                    spread: 80,
-                    origin: { y: 0.6 },
-                    colors: ['#00f2fe', '#ff7e5f', '#ffffff']
-                });
-            } else {
-                showScreen('fail-screen');
+        // 5. Move Environment & Ground
+        backgroundOffset -= gameSpeed * dt;
+        document.getElementById('ground').style.transform = `translateX(${backgroundOffset % 100}px)`;
+
+        // 6. Move & Check Items
+        document.querySelectorAll('.game-item').forEach(item => {
+            let currentX = parseFloat(item.dataset.x);
+            currentX -= gameSpeed * dt;
+            item.dataset.x = currentX;
+            item.style.left = currentX + 'px';
+            
+            // Collision Detection
+            if (!item.dataset.collected) {
+                const iRect = item.getBoundingClientRect();
+                const margin = 40; // Adapted for larger hitboxes
+                if (pRect.right - margin > iRect.left && 
+                    pRect.left + margin < iRect.right && 
+                    pRect.bottom - margin > iRect.top && 
+                    pRect.top + margin < iRect.bottom) {
+                    
+                    collectItem(item);
+                }
             }
+
+            if (currentX < -150) item.remove();
+        });
+
+        // 7. Spawner
+        while (spawnIndex < generatedLevel.length && generatedLevel[spawnIndex].time <= elapsedTime) {
+            spawnObject(generatedLevel[spawnIndex]);
+            spawnIndex++;
         }
 
-        function resetGameToStart() {
-            showScreen('start-screen');
+        requestAnimationFrame(gameLoop);
+    }
+
+    function collectItem(item) {
+        item.dataset.collected = "true";
+        const type = item.dataset.type;
+        item.style.display = "none";
+
+        if (type === 'heart') {
+            stats.hearts++;
+            document.getElementById('hud-hearts').innerText = stats.hearts;
+        } 
+        else if (type === 'spike') {
+            document.getElementById('app-container').classList.add('shake');
+            setTimeout(() => document.getElementById('app-container').classList.remove('shake'), 500);
+            
+            countdownTimer -= 5; 
+            document.getElementById('hud-timer').innerText = countdownTimer;
+            
+            const flash = document.createElement('div');
+            flash.style = "position:absolute;inset:0;background:rgba(255,0,0,0.5);z-index:99;pointer-events:none;";
+            document.getElementById('game-screen').appendChild(flash);
+            setTimeout(() => flash.remove(), 200);
+
+            if(countdownTimer <= 0) endGame(false);
         }
-    </script>
+        else if (type === 'legam') {
+            stats.legam++;
+            countdownTimer += 15;
+            document.getElementById('hud-timer').innerText = countdownTimer;
+            showToast("⏱️ Time Increased +15s", "var(--cyan)");
+        }
+        else if (type === 'snafi') {
+            stats.snafi++;
+            snafiTimeLeft = SNAFI_MAX_TIME;
+            document.getElementById('energy-fill').style.width = "100%";
+            playerEl.classList.add('snafi-glow');
+            showToast("⚡ Power Increased!", "var(--orange)");
+        }
+    }
+
+    // --- END GAME & RESULTS ---
+    function endGame(isWin) {
+        isGameRunning = false;
+        clearInterval(countdownInterval);
+        cancelAnimationFrame(gameLoopId);
+        document.getElementById('game-world').classList.remove('run-bg');
+
+        document.getElementById('result-title').innerText = isWin ? "Victory!" : "Time's Up!";
+        document.getElementById('result-title').style.color = isWin ? "var(--green)" : "var(--red)";
+        
+        showScreen('result-screen');
+
+        if (isWin) {
+            triggerHeartExplosion();
+            launchConfetti();
+        }
+
+        animateCounter('tally-hearts', stats.hearts);
+        animateCounter('tally-snafi', stats.snafi);
+        animateCounter('tally-legam', stats.legam);
+    }
+
+    function animateCounter(id, target) {
+        let current = 0;
+        const el = document.getElementById(id);
+        el.innerText = "0";
+        if (target === 0) return;
+        
+        const interval = setInterval(() => {
+            current++;
+            el.innerText = current;
+            if (current >= target) clearInterval(interval);
+        }, 100);
+    }
+
+    function triggerHeartExplosion() {
+        const container = document.getElementById('result-screen');
+        for (let i = 0; i < 40; i++) {
+            const heart = document.createElement('div');
+            heart.className = 'floating-heart';
+            heart.innerText = '❤️';
+            
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 100 + Math.random() * 250;
+            const tx = Math.cos(angle) * distance;
+            const ty = Math.sin(angle) * distance;
+            
+            heart.style.setProperty('--tx', `${tx}px`);
+            heart.style.setProperty('--ty', `${ty}px`);
+            heart.style.left = "50%";
+            heart.style.top = "50%";
+            
+            container.appendChild(heart);
+            setTimeout(() => heart.remove(), 1500);
+        }
+    }
+
+    function launchConfetti() {
+        confetti({ particleCount: 200, spread: 120, origin: { y: 0.6 }, colors: ['#ff4757', '#4facfe', '#4ade80'] });
+    }
+  </script>
 </body>
 </html>
