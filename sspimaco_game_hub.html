@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spimaco Games Hub</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Spimaco Themed Colors based on your game stations */
+      --bg: #0d141e; 
+      --surface: #111a28; 
+      --border: #2a3f5a;
+      --text: #ffffff;
+      --muted: #aaaaaa;
+      --spimaco-blue: #4facfe;
+      --spimaco-cyan: #00f2fe;
+      --icon-bg: rgba(255, 255, 255, 0.05);
+      --icon-border: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 60px;
+      min-height: 100vh;
+    }
+
+    .header {
+      text-align: center;
+      padding: 40px 20px 20px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      margin-bottom: 40px;
+    }
+
+    .app-logo {
+      max-width: 220px;
+      margin-bottom: 15px;
+    }
+
+    .page-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .page-sub {
+      color: var(--muted);
+      font-size: 1.1rem;
+      font-weight: 400;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 20px;
+      animation: fadeIn 0.4s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 25px;
+      margin-top: 20px;
+    }
+
+    .game-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      padding: 30px 15px;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+
+    .game-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--spimaco-blue);
+      box-shadow: 0 12px 24px rgba(79, 172, 254, 0.2);
+    }
+
+    .game-icon-wrap {
+      width: 100px;
+      height: 80px;
+      background: var(--icon-bg);
+      border: 1px solid var(--icon-border);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      padding: 10px;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .game-card:hover .game-icon-wrap {
+      background: rgba(79, 172, 254, 0.1);
+      border-color: var(--spimaco-blue);
+    }
+
+    .game-icon {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      /* Removed the white filter so your actual game logos show properly */
+    }
+
+    .game-title {
+      color: var(--text);
+      font-weight: 700;
+      font-size: 1.1rem;
+      line-height: 1.4;
+      margin-bottom: 15px;
+      flex-grow: 1;
+    }
+
+    .play-badge {
+      background: linear-gradient(135deg, var(--spimaco-blue), var(--spimaco-cyan));
+      color: #ffffff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 8px 24px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 10px rgba(79, 172, 254, 0.3);
+    }
+
+    .game-card:hover .play-badge { 
+      transform: scale(1.05);
+      box-shadow: 0 6px 15px rgba(79, 172, 254, 0.5);
+    }
+
+    .footer-disclaimer {
+      position: fixed;
+      bottom: 10px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      color: #666666;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    @media (max-width: 480px) {
+      .games-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+      .page-title { font-size: 2rem; }
+      .game-title { font-size: 0.95rem; }
+      .game-icon-wrap { width: 80px; height: 65px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <img src="assets/Asset 1.png" alt="Spimaco Logo" class="app-logo" onerror="this.onerror=null; this.src='https://placehold.co/200x60/171777/27bdff?text=Spimaco+Logo'">
+    <h1 class="page-title">Games Hub</h1>
+    <p class="page-sub">Select a station to begin your challenge!</p>
+  </header>
+
+  <main class="container">
+      <div class="games-grid">
+        
+        <!-- Station 1 -->
+        <a href="spimaco_digestive_health.html" class="game-card">
+          <div class="game-icon-wrap">
+            <img src="assets/Digestive Health Logo.png" alt="Digestive Rescue" class="game-icon" onerror="this.src='https://placehold.co/80x80/171777/27bdff?text=S1';">
+          </div>
+          <div class="game-title">Station 1<br><span style="font-size: 0.85rem; color: var(--muted); font-weight: 500;">Digestive Rescue</span></div>
+          <div class="play-badge">Play</div>
+        </a>
+
+        <!-- Station 2 -->
+        <a href="spimaco_pain_care.html" class="game-card">
+          <div class="game-icon-wrap">
+            <img src="assets/Pain Care Logo.png" alt="Fevadol Relief" class="game-icon" onerror="this.src='https://placehold.co/80x80/171777/27bdff?text=S2';">
+          </div>
+          <div class="game-title">Station 2<br><span style="font-size: 0.85rem; color: var(--muted); font-weight: 500;">Fevadol Relief</span></div>
+          <div class="play-badge">Play</div>
+        </a>
+
+        <!-- Station 3 -->
+        <a href="spimaco_cca.html" class="game-card">
+          <div class="game-icon-wrap">
+            <img src="assets/CCA Logo.png" alt="Pac-Maze" class="game-icon" onerror="this.src='https://placehold.co/80x80/171777/27bdff?text=S3';">
+          </div>
+          <div class="game-title">Station 3<br><span style="font-size: 0.85rem; color: var(--muted); font-weight: 500;">Pac-Maze</span></div>
+          <div class="play-badge">Play</div>
+        </a>
+
+        <!-- Station 4 -->
+        <a href="spimaco_men_health.html" class="game-card">
+          <div class="game-icon-wrap">
+            <img src="assets/Men Health Logo.png" alt="Health Runner" class="game-icon" onerror="this.src='https://placehold.co/80x80/171777/27bdff?text=S4';">
+          </div>
+          <div class="game-title">Station 4<br><span style="font-size: 0.85rem; color: var(--muted); font-weight: 500;">Health Runner</span></div>
+          <div class="play-badge">Play</div>
+        </a>
+
+      </div>
+  </main>
+
+  <div class="footer-disclaimer">PM-EG-CNT-26-00007</div>
+
+</body>
+</html>
