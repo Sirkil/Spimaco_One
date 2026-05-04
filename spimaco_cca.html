@@ -469,7 +469,7 @@
         
         // Show Toast Overlay
         const toast = document.getElementById('power-toast');
-        toast.textContent = "⚡ Power Mode Active!";
+        toast.textContent = "⚡ Allergy Fighting Mode Active!";
         toast.style.background = "rgba(74, 222, 128, 0.95)";
         toast.classList.add('show');
         clearTimeout(toastTimeout);
@@ -534,7 +534,7 @@
     function update() {
       let targetX = player.c * ts; 
       let targetY = player.r * ts;
-      let pSpeed = ts * 0.10; // Slowed movement speed down to 0.10
+      let pSpeed = ts * 0.12; // Slowed movement speed down to 0.10
       
       // Snapping movement logic for Player (Fixes jittering/overshoot)
       if (player.x < targetX) player.x = Math.min(player.x + pSpeed, targetX);
