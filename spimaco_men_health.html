@@ -431,6 +431,21 @@
         
         t += 1.5; // Breather gap
       });
+      let totalTime = t;
+      let numberOfExtraHearts = 20; // Increase or decrease this to change density
+      
+      for (let i = 0; i < numberOfExtraHearts; i++) {
+        // Pick a random time anywhere from the start (2.0s) to the end of the level
+        let randomTime = 2.0 + Math.random() * (totalTime - 2.0);
+        
+        // Randomly place it on the ground or in the air
+        let randomY = Math.random() > 0.5 ? 0 : shelfLogicalHeight + 25; 
+        
+        data.push({ time: randomTime, type: 'heart', y: randomY });
+      }
+
+      // IMPORTANT: Sort the timeline so the items still spawn in the correct order
+      data.sort((a, b) => a.time - b.time);
 
       data.push({ time: t + 2, type: 'end' });
       return data;

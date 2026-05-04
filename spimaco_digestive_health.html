@@ -583,13 +583,13 @@
         }
 
         function spawnItem() {
-            if(Math.random() < 0.05) { 
+            if(Math.random() < 0.08) { 
                 let isGerm = Math.random() < 0.3; 
                 items.push({
                     x: Math.random() * (canvas.width - 30),
                     y: -30,
                     size: 30,
-                    speed: 2 + Math.random() * 3,
+                    speed: 5 + Math.random() * 4,
                     type: isGerm ? 'germ' : 'junk',
                     emoji: isGerm ? germEmoji : junkEmojis[Math.floor(Math.random() * junkEmojis.length)]
                 });
