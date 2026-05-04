@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Station 3 - PacMaze Challenge</title>
+  <title>PacMaze Challenge - Station 3</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
@@ -216,7 +216,7 @@
 
   <div class="game-container">
       
-      <div id="power-toast" class="toast">⚡ Power Mode Active!</div>
+      <div id="power-toast" class="toast">⚡ Allergy Fight Mode Active!</div>
 
       <!-- START SCREEN -->
       <div class="screen active" id="screen-start" style="justify-content: center; align-items: center; text-align: center;">
@@ -246,7 +246,10 @@
       <!-- MAIN GAME SCREEN -->
       <div class="screen" id="screen-game">
         <div class="hud">
-          <div class="hud-text">⭐ <span id="hud-score">0</span></div>
+          <div style="display: flex; gap: 15px;">
+              <div class="hud-text">⭐ <span id="hud-score">0</span></div>
+              <div class="hud-text" style="color: #ff4757;">❤️ <span id="hud-lives">3</span></div>
+          </div>
           <img src="assets/Asset 1.png" alt="Spimaco" style="height: 30px;" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
           <div class="hud-text">⏱️<span id="hud-timer">60</span>s</div>
         </div>
@@ -301,7 +304,7 @@
     }
 
     // --- SETUP & ASSETS ---
-    let score = 0, timeLeft = 60, timerId, gameLoopId;
+    let score = 0, timeLeft = 60, lives = 3, timerId, gameLoopId;
     let totalPellets = 0;
     let collectedPellets = 0;
     let powerModeActive = false;
@@ -400,6 +403,7 @@
 
       score = 0; 
       timeLeft = 60; 
+      lives = 3; 
       powerModeActive = false;
       document.getElementById('power-toast').classList.remove('show');
       map = JSON.parse(JSON.stringify(initialMap));
@@ -425,6 +429,7 @@
       
       document.getElementById('hud-score').textContent = score;
       document.getElementById('hud-timer').textContent = timeLeft;
+      document.getElementById('hud-lives').textContent = lives;
       clearInterval(timerId); cancelAnimationFrame(gameLoopId);
       
       timerId = setInterval(() => {
@@ -464,6 +469,8 @@
         
         // Show Toast Overlay
         const toast = document.getElementById('power-toast');
+        toast.textContent = "⚡ Power Mode Active!";
+        toast.style.background = "rgba(74, 222, 128, 0.95)";
         toast.classList.add('show');
         clearTimeout(toastTimeout);
         toastTimeout = setTimeout(() => {
@@ -480,16 +487,54 @@
         }, 5000); // 5 Seconds
     }
 
+    function handlePlayerCaught() {
+        lives--;
+        document.getElementById('hud-lives').textContent = lives;
+        
+        if (lives > 0) {
+            // Instantly snap player back to the starting point
+            player.r = 14; 
+            player.c = 6; 
+            player.x = 6 * ts; 
+            player.y = 14 * ts;
+            player.dr = 0; 
+            player.dc = 0; 
+            player.nextDr = 0; 
+            player.nextDc = 0;
+
+            // Reset ghosts back to the center box to give the player breathing room
+            ghosts[0].r = 8; ghosts[0].c = 5; ghosts[0].x = 5*ts; ghosts[0].y = 8*ts;
+            ghosts[1].r = 8; ghosts[1].c = 6; ghosts[1].x = 6*ts; ghosts[1].y = 8*ts;
+            ghosts[2].r = 8; ghosts[2].c = 7; ghosts[2].x = 7*ts; ghosts[2].y = 8*ts;
+            ghosts[3].r = 9; ghosts[3].c = 6; ghosts[3].x = 6*ts; ghosts[3].y = 9*ts;
+            
+            // Show a brief warning toast
+            const toast = document.getElementById('power-toast');
+            toast.textContent = "Oops! Lost a life!";
+            toast.style.background = "rgba(255, 71, 87, 0.95)"; // Red color for damage
+            toast.classList.add('show');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 1500);
+
+        } else {
+            // No lives left, trigger game over
+            endGame(false, false); 
+        }
+    }
+
     // --- GAME LOOP ---
     function loop() {
       update(); draw();
-      if(timeLeft > 0) gameLoopId = requestAnimationFrame(loop);
+      if(timeLeft > 0 && lives > 0) gameLoopId = requestAnimationFrame(loop);
     }
 
     function update() {
       let targetX = player.c * ts; 
       let targetY = player.r * ts;
-      let pSpeed = ts * 0.10; // Slowed movement speed down to 0.10
+      let pSpeed = ts * 0.06; // Slowed movement speed down to 0.10
       
       // Snapping movement logic for Player (Fixes jittering/overshoot)
       if (player.x < targetX) player.x = Math.min(player.x + pSpeed, targetX);
@@ -610,7 +655,8 @@
              }, 3000);
 
           } else {
-             endGame(false, false); 
+             // Replaced direct endGame with the new lives function
+             handlePlayerCaught();
           }
         }
       });
