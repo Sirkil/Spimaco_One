@@ -534,7 +534,7 @@
     function update() {
       let targetX = player.c * ts; 
       let targetY = player.r * ts;
-      let pSpeed = ts * 0.06; // Slowed movement speed down to 0.10
+      let pSpeed = ts * 0.10; // Slowed movement speed down to 0.10
       
       // Snapping movement logic for Player (Fixes jittering/overshoot)
       if (player.x < targetX) player.x = Math.min(player.x + pSpeed, targetX);
