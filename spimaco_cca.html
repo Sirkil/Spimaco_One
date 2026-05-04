@@ -260,6 +260,12 @@
           <img id="ghost-sprite-1" src="assets/ghost2.png" class="sprite ghost" alt="Ghost">
           <img id="ghost-sprite-2" src="assets/ghost3.png" class="sprite ghost" alt="Ghost">
           <img id="ghost-sprite-3" src="assets/ghost4.png" class="sprite ghost" alt="Ghost">
+          
+          <!-- Power Mode Icons -->
+          <img id="vuln-ghost-0" src="assets/smoke.png" class="sprite" alt="Vuln">
+          <img id="vuln-ghost-1" src="assets/dust.png" class="sprite" alt="Vuln">
+          <img id="vuln-ghost-2" src="assets/perfumes.png" class="sprite" alt="Vuln">
+          <img id="vuln-ghost-3" src="assets/bugs.png" class="sprite" alt="Vuln">
         </div>
         
         <div class="controls-area">
@@ -483,7 +489,7 @@
     function update() {
       let targetX = player.c * ts; 
       let targetY = player.r * ts;
-      let pSpeed = ts * 0.15; // Smooth movement speed
+      let pSpeed = ts * 0.10; // Slowed movement speed down to 0.10
       
       // Snapping movement logic for Player (Fixes jittering/overshoot)
       if (player.x < targetX) player.x = Math.min(player.x + pSpeed, targetX);
@@ -663,16 +669,21 @@
       // 4. Draw Ghosts
       ghosts.forEach((g, i) => {
         if (g.isEaten) return;
-        const gSprite = document.getElementById('ghost-sprite-' + i);
-        if (gSprite.complete && gSprite.naturalWidth !== 0) {
+        
+        // Switch to the new icons if Power Mode is active
+        const spriteId = powerModeActive ? 'vuln-ghost-' + i : 'ghost-sprite-' + i;
+        const gSprite = document.getElementById(spriteId);
+        
+        if (gSprite && gSprite.complete && gSprite.naturalWidth !== 0) {
             ctx.save();
             
             if (powerModeActive) {
+                // Draws the blue glow behind your new icons
                 ctx.fillStyle = 'rgba(79, 172, 254, 0.6)';
                 ctx.beginPath();
                 ctx.arc(Math.round(g.x + ts/2), Math.round(g.y + ts/2), ts*0.4, 0, Math.PI*2);
                 ctx.fill();
-                ctx.globalAlpha = 0.6;
+                ctx.globalAlpha = 1.0; // Ensures the icon itself is not transparent
             }
             
             ctx.drawImage(gSprite, Math.round(g.x + ts*0.05), Math.round(g.y + ts*0.05), Math.round(ts*0.9), Math.round(ts*0.9));

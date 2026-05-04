@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Digestive Rescue Challenge - Station 2</title>
+    <title>Pain Care Challenge - Station 2</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         /* --- GLOBAL VARIABLES --- */
@@ -151,28 +151,46 @@
         }
 
         .match-item {
-            background: var(--glass-bg);
+            background: rgba(25, 40, 60, 0.6);
             border: 2px solid transparent;
             border-radius: 10px;
             text-align: center;
             cursor: pointer;
             display: flex;
+            flex-direction: column; /* Stacks image and text vertically */
             align-items: center;
             justify-content: center;
-            padding: 8px;
-            height: 55px;
+            padding: 10px;
+            height: auto; 
+            min-height: 110px;
+            gap: 8px; /* Space between image and text */
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             font-size: 0.75rem;
             font-weight: bold;
             transition: all 0.2s ease;
         }
 
-        .right-col .match-item { background: white; color: black; }
-        .right-col .match-item img { height: 100%; object-fit: contain; }
+        .match-item img { 
+            height: 60px; 
+            width: 100%; 
+            object-fit: contain; 
+            pointer-events: none; 
+        }
 
-        .match-item.selected { border-color: var(--neon-blue); transform: scale(1.05); }
+        /* Styling for Symptoms (Left) */
+        .left-col .match-item {
+            border: 2px solid var(--neon-blue);
+        }
+
+        /* Styling for Packs (Right) */
+        .right-col .match-item { 
+            background: rgba(255, 255, 255, 0.1); 
+            color: white; 
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .match-item.selected { border-color: var(--neon-blue); transform: scale(1.05); background: rgba(79, 172, 254, 0.2); }
         .match-item.matched { opacity: 0.5; pointer-events: none; border-color: var(--neon-green); }
-
         /* Timer Penalty */
         @keyframes flashRed {
             0% { border-color: var(--neon-red); color: var(--neon-red); transform: scale(1.1); }
@@ -352,13 +370,13 @@
 
         /* --- STAGE 1 LOGIC (MATCH GAME) --- */
         const s1Pairs = [
-            { id: 'p1', symptom: 'Mild Pain / Fever', img: 'assets/fevadol.png' },
-            { id: 'p2', symptom: 'Strong Fever & Pain', img: 'assets/fevadol_plus.png' },
-            { id: 'p3', symptom: 'Need Quick Relief', img: 'assets/fevadol_fast.png' },
-            { id: 'p4', symptom: 'Severe Migraine', img: 'assets/fevadol_extra.png' },
-            { id: 'p5', symptom: 'Cold & Flu Symptoms', img: 'assets/fevadol_cold&flu.png' },
-            { id: 'p6', symptom: 'Sinus Congestion', img: 'assets/fevadol_sinus.png' },
-            { id: 'p7', symptom: 'Child with Fever', img: 'assets/fevadol_syrup.png' }
+            { id: 'p1', symptomText: 'PERSON WITH BODY PAIN', symptomImg: 'assets/body_pain.png', packText: 'FEVADOL 500 MG', packImg: 'assets/fevadol.png' },
+            { id: 'p2', symptomText: 'Strong Fever & Pain', symptomImg: 'assets/symptom_fever.png', packText: 'FEVADOL PLUS', packImg: 'assets/fevadol_plus.png' },
+            { id: 'p3', symptomText: 'Need Quick Relief', symptomImg: 'assets/symptom_quick.png', packText: 'FEVADOL FAST', packImg: 'assets/fevadol_fast.png' },
+            { id: 'p4', symptomText: 'Severe Migraine', symptomImg: 'assets/symptom_migraine.png', packText: 'FEVADOL EXTRA', packImg: 'assets/fevadol_extra.png' },
+            { id: 'p5', symptomText: 'Cold & Flu Symptoms', symptomImg: 'assets/symptom_cold.png', packText: 'FEVADOL COLD & FLU', packImg: 'assets/fevadol_cold&flu.png' },
+            { id: 'p6', symptomText: 'Sinus Congestion', symptomImg: 'assets/symptom_sinus.png', packText: 'FEVADOL SINUS', packImg: 'assets/fevadol_sinus.png' },
+            { id: 'p7', symptomText: 'Child with Fever', symptomImg: 'assets/symptom_child.png', packText: 'FEVADOL SYRUP', packImg: 'assets/fevadol_syrup.png' }
         ];
 
         let s1TimerInterval;
@@ -385,7 +403,7 @@
                 let el = document.createElement('div');
                 el.className = 'match-item left-item';
                 el.dataset.matchId = item.id;
-                el.innerText = item.symptom;
+                el.innerHTML = `<img src="${item.symptomImg}" onerror="this.onerror=null; this.src='https://placehold.co/100x60/111a28/4facfe?text=Symptom'"><span style="text-transform: uppercase;">${item.symptomText}</span>`;
                 el.onclick = () => handleS1LeftClick(el);
                 leftCol.appendChild(el);
             });
@@ -394,7 +412,7 @@
                 let el = document.createElement('div');
                 el.className = 'match-item right-item';
                 el.dataset.matchId = item.id;
-                el.innerHTML = `<img src="${item.img}" onerror="this.onerror=null; this.src='https://placehold.co/100x50/white/red?text=Pack'">`;
+                el.innerHTML = `<img src="${item.packImg}" onerror="this.onerror=null; this.src='https://placehold.co/100x60/111a28/ffffff?text=Pack'"><span style="text-transform: uppercase;">${item.packText}</span>`;
                 el.onclick = () => handleS1RightClick(el);
                 rightCol.appendChild(el);
             });
