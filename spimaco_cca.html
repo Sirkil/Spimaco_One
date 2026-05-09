@@ -231,7 +231,7 @@
       <!-- INTRO DIALOG -->
       <div class="dialog-overlay" id="dialog-intro">
         <div class="dialog-box">
-            <div style="font-size: 50px; margin-bottom: 10px;">👻</div>
+            <img src="assets/pacman_game_icon.png" alt="Captin One" style="height: 100px; margin-bottom: 10px; object-fit: contain;">
             <h2>How to Play</h2>
             <p style="text-align: left;">
                 • Use the on-screen buttons to move.<br>
@@ -314,7 +314,7 @@
     const packImages = {
         savi: 'assets/savy.png',
         lorinaseTab: 'assets/lorinase.png',
-        lorinaseSyr: 'assets/lorinase_syrup.png',
+        lorinaseSyr: 'assets/lorine.png',
         liblab: 'assets/liblab.png'
     };
     
@@ -682,13 +682,20 @@
                 if (map[r][c] === 5) imgToDraw = preloadedPacks.lorinaseSyr;
                 if (map[r][c] === 6) imgToDraw = preloadedPacks.liblab;
 
-                if (imgToDraw && imgToDraw.complete && imgToDraw.naturalWidth !== 0) {
-                    let pulseOffset = Math.sin(Date.now() / 150) * 2;
-                    let drawX = Math.round(c*ts + ts*0.1 - pulseOffset/2);
-                    let drawY = Math.round(r*ts + ts*0.1 - pulseOffset/2);
-                    let drawS = Math.round(ts*0.8 + pulseOffset);
-                    ctx.drawImage(imgToDraw, drawX, drawY, drawS, drawS);
-                } else {
+               if (imgToDraw && imgToDraw.complete && imgToDraw.naturalWidth !== 0) {
+    // Increased the pulse effect slightly
+    let pulseOffset = Math.sin(Date.now() / 120) * 3; 
+    
+    // Set base size to 1.5 times the tile size (makes it much larger)
+    let baseSize = ts * 1.2; 
+    let drawS = Math.round(baseSize + pulseOffset);
+    
+    // Dynamically center the enlarged image inside the grid cell
+    let drawX = Math.round(c*ts + (ts - drawS)/2);
+    let drawY = Math.round(r*ts + (ts - drawS)/2);
+    
+    ctx.drawImage(imgToDraw, drawX, drawY, drawS, drawS);
+} else {
                     ctx.beginPath(); ctx.arc(c*ts + ts/2, r*ts + ts/2, ts*0.3, 0, Math.PI*2); ctx.fill();
                 }
             }

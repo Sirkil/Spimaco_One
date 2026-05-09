@@ -331,7 +331,7 @@
         <!-- DIALOGS -->
         <div class="dialog-overlay" id="dialog-s1-intro">
             <div class="dialog-box">
-                <div style="font-size: 50px; margin-bottom: 10px;">🔗</div>
+                <img src="assets/match_game_icon.png" alt="Brick" style="height: 60px; margin-bottom: 10px; object-fit: contain;">
                 <h2>Stage 1: Relief Rush</h2>
                 <p>Match the patient's symptom to the correct Fevadol product. <br><br>Careful: Wrong matches cost you 5 seconds!</p>
                 <button class="action-btn" onclick="startStage1()">Ready!</button>
@@ -349,7 +349,7 @@
 
         <div class="dialog-overlay" id="dialog-s2-intro">
             <div class="dialog-box">
-                <div style="font-size: 50px; margin-bottom: 10px;">🧠</div>
+                <img src="assets/memory_game_icon.png" alt="Brick" style="height: 60px; margin-bottom: 10px; object-fit: contain;">
                 <h2>Stage 2: Memory Stack</h2>
                 <p>Find all 8 matching pairs hidden in the grid before time runs out. Look out for the Saudi Made logo!</p>
                 <button class="action-btn" onclick="startStage2()">Start Stage 2</button>
@@ -375,10 +375,10 @@
 
         /* --- STAGE 1 LOGIC (MATCH GAME) --- */
         const s1Pairs = [
-            { id: 'p1', symptomText: 'PERSON WITH BODY PAIN', symptomImg: 'assets/body_pain.png', packText: 'FEVADOL 500 MG', packImg: 'assets/fevadol.png' },
+            { id: 'p1', symptomText: 'Low Back Pain', symptomImg: 'assets/body_pain.png', packText: 'FEVADOL 500 MG', packImg: 'assets/fevadol.png' },
             { id: 'p2', symptomText: 'Strong Fever & Pain', symptomImg: 'assets/symptom_fever.png', packText: 'FEVADOL PLUS', packImg: 'assets/fevadol_plus.png' },
             { id: 'p3', symptomText: 'Need Quick Relief', symptomImg: 'assets/symptom_quick.png', packText: 'FEVADOL FAST', packImg: 'assets/fevadol_fast.png' },
-            { id: 'p4', symptomText: 'Severe Migraine', symptomImg: 'assets/symptom_migraine.png', packText: 'FEVADOL EXTRA', packImg: 'assets/fevadol_extra.png' },
+            { id: 'p4', symptomText: 'Strong Headache', symptomImg: 'assets/symptom_migraine.png', packText: 'FEVADOL EXTRA', packImg: 'assets/fevadol_extra.png' },
             { id: 'p5', symptomText: 'Cold & Flu Symptoms', symptomImg: 'assets/symptom_cold.png', packText: 'FEVADOL COLD & FLU', packImg: 'assets/fevadol_cold&flu.png' },
             { id: 'p6', symptomText: 'Sinus Congestion', symptomImg: 'assets/symptom_sinus.png', packText: 'FEVADOL SINUS', packImg: 'assets/fevadol_sinus.png' },
             { id: 'p7', symptomText: 'Child with Fever', symptomImg: 'assets/symptom_child.png', packText: 'FEVADOL SYRUP', packImg: 'assets/fevadol_syrup.png' }

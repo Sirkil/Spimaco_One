@@ -318,8 +318,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.5rem;
-            cursor: pointer;
             width: 100%;
         }
 
@@ -388,10 +386,8 @@
 
     <div id="game-container">
         
-        <!-- Toast Notification -->
         <div id="peptazol-toast" class="toast">Use Peptazol To relief heartburn!</div>
 
-        <!-- START SCREEN -->
         <div id="start-screen" class="screen active">
             <img src="assets/Digestive Health Logo.png" alt="Game Logo" class="game-logo-large" onerror="this.onerror=null; this.src='https://placehold.co/200x100/171777/27bdff?text=Spimaco+Logo'">
             <h1 style="color: white; margin-bottom: 10px;">Digestive Rescue</h1>
@@ -401,7 +397,6 @@
             <button class="start-btn" onclick="showStage1Dialog()">Start Challenge</button>
         </div>
 
-        <!-- STAGE 1: CATCH GAME -->
         <div id="stage1-screen" class="screen">
             <header>
                 <img src="assets/Asset 1.png" alt="Logo" class="top-logo" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
@@ -414,27 +409,24 @@
             <canvas id="catchCanvas"></canvas>
         </div>
 
-        <!-- STAGE 2: TETRIS GAME -->
         <div id="stage2-screen" class="screen">
             <header id="stage2-header">
                 <img src="assets/Asset 1.png" alt="Logo" class="top-logo" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
                 <div class="stats-bar">
-                    <div class="stat-box" style="font-size: 0.85rem;">Tap columns to drop!</div>
+                    <div class="stat-box" style="font-size: 0.85rem;" id="stage2-instruction">Wait for the stack!</div>
                 </div>
             </header>
             
             <div class="tetris-wrapper" id="tetris-wrapper">
                 <div class="threshold-line"></div>
                 <div class="grid-container" id="tetris-grid">
-                    <!-- Grid cells injected via JS -->
-                </div>
+                    </div>
                 <img src="assets/peptazol.png" id="peptazol-popup" onerror="this.onerror=null; this.src='https://placehold.co/150x250/ff4757/white?text=Peptazol'">
             </div>
 
             <button class="circle-btn" id="btn-peptazol" disabled onclick="usePeptazol()">Use<br>Peptazol</button>
         </div>
 
-        <!-- FINAL SUCCESS SCREEN -->
         <div id="success-screen" class="screen">
             <div class="result-box">
                 <div class="icon-large icon-success">✔️</div>
@@ -444,19 +436,15 @@
             </div>
         </div>
 
-        <!-- DIALOGS -->
-        
-        <!-- Dialog: Stage 1 Intro -->
         <div class="dialog-overlay" id="dialog-s1-intro">
             <div class="dialog-box">
-                <div style="font-size: 50px; margin-bottom: 10px;">🛒</div>
+                <img src="assets/catch_game_icon.png" alt="Cart" style="height: 60px; margin-bottom: 10px; object-fit: contain;">
                 <h2>Stage 1: Catch Game</h2>
-                <p>Catch the junk food (🍔🍕) with your <strong>Enzymax</strong> pack to earn points (5 pts). Avoid the germs (🦠) or you lose a life!</p>
+                <p>Catch the junk food with your <strong>Enzymax</strong> pack to earn points (5 pts). Avoid the germs or you lose a life!</p>
                 <button class="action-btn" onclick="startStage1()">Ready!</button>
             </div>
         </div>
 
-        <!-- Dialog: Stage 1 End -->
         <div class="dialog-overlay" id="dialog-s1-end">
             <div class="dialog-box">
                 <h2 id="s1-end-title">Time's Up!</h2>
@@ -465,17 +453,15 @@
             </div>
         </div>
 
-        <!-- Dialog: Stage 2 Intro -->
         <div class="dialog-overlay" id="dialog-s2-intro">
             <div class="dialog-box">
-                <div style="font-size: 50px; margin-bottom: 10px;">🧱</div>
+                <img src="assets/tetris_game_icon.png" alt="Brick" style="height: 60px; margin-bottom: 10px; object-fit: contain;">
                 <h2>Stage 2: Tetris Stack</h2>
-                <p>Tap the columns to drop junk food. When a column stacks 6 items high, the screen will glow red. Use <strong>Peptazol</strong> to clear it!</p>
+                <p>Junk food will drop automatically into the columns. When a column stacks 6 items high, the screen will glow red. Use <strong>Peptazol</strong> to clear it!</p>
                 <button class="action-btn" onclick="startStage2()">Start Stage 2</button>
             </div>
         </div>
 
-        <!-- Dialog: Stage 2 End -->
         <div class="dialog-overlay" id="dialog-s2-end">
             <div class="dialog-box">
                 <img src="assets/peptazol.png" style="width: 60px;" onerror="this.style.display='none'">
@@ -500,22 +486,29 @@
         let s1Score = 0;
         let s1Lives = 3;
         
-        let basket = { x: 0, y: 0, width: 90, height: 90 }; // Increased base width slightly
+        let basket = { x: 0, y: 0, width: 90, height: 90 }; 
         let items = [];
-        let junkEmojis = ['🍔', '🍕', '🍟', '🍩', '🌭'];
-        let germEmoji = '🦠';
+
+        const junkImages = [
+            'assets/pizza.png', 
+            'assets/cola.png', 
+            'assets/frise.png', 
+            'assets/taco.png', 
+            'assets/plant.png'  
+        ].map(src => {
+            const img = new Image();
+            img.src = src;
+            return img;
+        });
+
+        const germImg = new Image();
+        germImg.src = 'assets/virus.png';
         
-        // Load Enzymax Image & Fix Aspect Ratio
         const enzymaxImg = new Image();
         enzymaxImg.onload = function() {
-            // Calculate the exact aspect ratio of the image file
             const aspectRatio = this.naturalHeight / this.naturalWidth;
-            
-            // Set basket width, then adjust height so it doesn't squish
             basket.width = 90; 
             basket.height = basket.width * aspectRatio; 
-            
-            // Re-center basket vertically after adjusting height
             resizeCanvas();
         };
         enzymaxImg.src = 'assets/enzymax.png';
@@ -530,7 +523,7 @@
         function resizeCanvas() {
             const rect = canvas.parentElement.getBoundingClientRect();
             canvas.width = rect.width;
-            canvas.height = rect.height - 80; // Adjust for header height
+            canvas.height = rect.height - 80; 
             basket.y = canvas.height - basket.height - 10;
             basket.x = (canvas.width / 2) - (basket.width / 2);
         }
@@ -588,10 +581,10 @@
                 items.push({
                     x: Math.random() * (canvas.width - 30),
                     y: -30,
-                    size: 30,
+                    size: 45, 
                     speed: 5 + Math.random() * 4,
                     type: isGerm ? 'germ' : 'junk',
-                    emoji: isGerm ? germEmoji : junkEmojis[Math.floor(Math.random() * junkEmojis.length)]
+                    img: isGerm ? germImg : junkImages[Math.floor(Math.random() * junkImages.length)]
                 });
             }
         }
@@ -616,8 +609,9 @@
                 let item = items[i];
                 item.y += item.speed;
 
-                ctx.font = '30px Arial';
-                ctx.fillText(item.emoji, item.x, item.y);
+                if (item.img.complete && item.img.naturalWidth !== 0) {
+                    ctx.drawImage(item.img, item.x, item.y, item.size, item.size);
+                }
 
                 if (item.y + item.size > basket.y && item.y < basket.y + basket.height &&
                     item.x + item.size > basket.x && item.x < basket.x + basket.width) {
@@ -651,10 +645,11 @@
         }
 
         /* --- STAGE 2 LOGIC --- */
-        const cols = 8; // 4 columns
-        const rows = 8; // 8 rows
+        const cols = 8; 
+        const rows = 8; 
         let gridState = Array(cols).fill(0); 
         let toastTriggered = false; 
+        let autoDropInterval; // New variable to hold the drop interval
 
         function showStage2Dialog() {
             document.getElementById('dialog-s1-end').classList.remove('active');
@@ -668,6 +663,7 @@
             toastTriggered = false;
             document.getElementById('peptazol-toast').classList.remove('show');
             buildGrid();
+            startAutoDrop(); // Start the automatic drop
         }
 
         function buildGrid() {
@@ -686,20 +682,51 @@
                 
                 if (c === cols - 1) colDiv.style.borderRight = "none";
                 
-                colDiv.onclick = () => dropBlock(c, colDiv);
+                // Manual click drop removed
                 gridEl.appendChild(colDiv);
             }
+        }
+
+        // New function to handle random, automatic dropping
+        function startAutoDrop() {
+            autoDropInterval = setInterval(() => {
+                // Find all columns that aren't full yet
+                let availableCols = [];
+                for (let i = 0; i < cols; i++) {
+                    if (gridState[i] < rows) {
+                        availableCols.push(i);
+                    }
+                }
+
+                if (availableCols.length > 0) {
+                    // Pick a random column from the available ones
+                    let randomColIndex = availableCols[Math.floor(Math.random() * availableCols.length)];
+                    let gridEl = document.getElementById('tetris-grid');
+                    let targetColElement = gridEl.children[randomColIndex];
+                    
+                    dropBlock(randomColIndex, targetColElement);
+                } else {
+                    // Grid is completely full, stop trying to drop
+                    clearInterval(autoDropInterval);
+                }
+            }, 500); // Drops 1 block every 500ms
         }
 
         function dropBlock(colIndex, colElement) {
             if(gridState[colIndex] >= rows) return; 
 
-            let emoji = junkEmojis[Math.floor(Math.random() * junkEmojis.length)];
+            let randomImgSrc = junkImages[Math.floor(Math.random() * junkImages.length)].src;
             let block = document.createElement('div');
             block.className = 'grid-cell item-block';
-            block.innerText = emoji;
             block.style.flex = `0 0 calc(100% / ${rows})`; 
             
+            let imgEl = document.createElement('img');
+            imgEl.src = randomImgSrc;
+            imgEl.style.width = '80%'; 
+            imgEl.style.height = '80%';
+            imgEl.style.objectFit = 'contain';
+            
+            block.appendChild(imgEl);
             colElement.appendChild(block);
             gridState[colIndex]++;
 
@@ -707,7 +734,6 @@
         }
 
         function checkTetrisWin() {
-            // Set threshold to 6 blocks high
             let thresholdMet = gridState.some(height => height >= 6); 
             
             if (thresholdMet) {
@@ -715,6 +741,9 @@
                 const btn = document.getElementById('btn-peptazol');
                 btn.disabled = false;
                 
+                // Pause dropping so the grid doesn't overflow completely while waiting for the user
+                clearInterval(autoDropInterval);
+
                 if (!toastTriggered) {
                     toastTriggered = true;
                     document.getElementById('peptazol-toast').classList.add('show');
