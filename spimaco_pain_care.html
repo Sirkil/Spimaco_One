@@ -82,6 +82,17 @@
             gap: 5px;
             backdrop-filter: blur(5px);
         }
+        
+        .skip-btn {
+            background: var(--neon-red);
+            cursor: pointer;
+            border: none;
+            color: white;
+            transition: transform 0.1s;
+        }
+        .skip-btn:active {
+            transform: scale(0.95);
+        }
 
         .action-btn {
             background: linear-gradient(135deg, var(--neon-blue), #00f2fe);
@@ -162,30 +173,28 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 5px; /* Reduced padding */
-            flex: 1; /* Allows items to shrink and fit the screen automatically */
-            min-height: 0; /* Removed the hardcoded 110px limit */
-            gap: 4px; /* Reduced gap between image and text */
+            padding: 5px; 
+            flex: 1; 
+            min-height: 0; 
+            gap: 4px; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            font-size: 0.65rem; /* Slightly smaller text for fit */
+            font-size: 0.65rem; 
             font-weight: bold;
             transition: all 0.2s ease;
         }
 
         .match-item img { 
             height: auto; 
-            max-height: 5vh; /* Dynamically sizes image based on screen height */
+            max-height: 5vh; 
             width: 100%; 
             object-fit: contain; 
             pointer-events: none; 
         }
 
-        /* Styling for Symptoms (Left) */
         .left-col .match-item {
             border: 2px solid var(--neon-blue);
         }
 
-        /* Styling for Packs (Right) */
         .right-col .match-item { 
             background: rgba(255, 255, 255, 0.1); 
             color: white; 
@@ -194,7 +203,7 @@
 
         .match-item.selected { border-color: var(--neon-blue); transform: scale(1.05); background: rgba(79, 172, 254, 0.2); }
         .match-item.matched { opacity: 0.5; pointer-events: none; border-color: var(--neon-green); }
-        /* Timer Penalty */
+
         @keyframes flashRed {
             0% { border-color: var(--neon-red); color: var(--neon-red); transform: scale(1.1); }
             100% { border-color: rgba(255,255,255,0.4); color: white; transform: scale(1); }
@@ -265,7 +274,6 @@
 
     <div id="game-container">
         
-        <!-- START SCREEN -->
         <div id="start-screen" class="screen active" style="justify-content: center; align-items: center; text-align: center; padding: 20px;">
             <img src="assets/Pain Care Logo.png" alt="Game Logo" style="width: 200px; margin-bottom: 20px;" onerror="this.onerror=null; this.src='https://placehold.co/200x100/171777/27bdff?text=Spimaco+Logo'">
             <h1 style="margin-bottom: 10px;">Fevadol Relief</h1>
@@ -275,11 +283,13 @@
             <button class="action-btn" onclick="showStage1Dialog()">Start Challenge</button>
         </div>
 
-        <!-- STAGE 1: MATCH GAME -->
         <div id="stage1-screen" class="screen">
             <header>
                 <img src="assets/Asset 1.png" alt="Logo" class="top-logo" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
-                <div class="stat-box" id="s1-timer">⏱️ 60s</div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="stat-box" id="s1-timer">⏱️ 60s</div>
+                    <button class="stat-box skip-btn" onclick="skipStage1()">Skip</button>
+                </div>
             </header>
             
             <div class="match-area">
@@ -289,24 +299,22 @@
             </div>
         </div>
 
-        <!-- STAGE 2: MEMORY GAME -->
         <div id="stage2-screen" class="screen">
             <header>
                 <img src="assets/Asset 1.png" alt="Logo" class="top-logo" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
                 <div style="display: flex; gap: 10px;">
                     <div class="stat-box" id="s2-timer">⏱️ 60s</div>
                     <div class="stat-box" id="s2-matches">✔️ 0/8</div>
+                    <button class="stat-box skip-btn" onclick="skipStage2()">Skip</button>
                 </div>
             </header>
             
             <div class="memory-wrapper">
                 <div class="memory-grid" id="memory-grid">
-                    <!-- Cards injected via JS -->
-                </div>
+                    </div>
             </div>
         </div>
 
-        <!-- FINAL SUCCESS SCREEN -->
         <div id="success-screen" class="screen" style="justify-content: center; align-items: center;">
             <div class="dialog-box">
                 <div class="icon-large icon-success">✔️</div>
@@ -316,7 +324,6 @@
             </div>
         </div>
 
-        <!-- FAIL SCREEN -->
         <div id="fail-screen" class="screen" style="justify-content: center; align-items: center;">
             <div class="dialog-box" style="background: #1e1111; border-color: rgba(255, 71, 87, 0.2);">
                 <div class="icon-large icon-fail">❌</div>
@@ -326,7 +333,6 @@
             </div>
         </div>
 
-        <!-- DIALOGS -->
         <div class="dialog-overlay" id="dialog-s1-intro">
             <div class="dialog-box">
                 <img src="assets/match_game_icon.png" alt="Brick" style="height: 60px; margin-bottom: 10px; object-fit: contain;">
@@ -340,7 +346,6 @@
             <div class="dialog-box">
                 <h2>Matches Found!</h2>
                 <p>Great job identifying the right relief for every symptom. Transitioning to Stage 2...</p>
-                <!-- Kept the button for manual override, but added an auto-transition in JS -->
                 <button class="action-btn" style="margin-top: 15px;" onclick="showStage2Dialog()">Continue Now</button>
             </div>
         </div>
@@ -369,6 +374,21 @@
         function showScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
+        }
+
+        function skipStage1() {
+            clearInterval(s1TimerInterval);
+            clearTimeout(autoTransitionTimeout);
+            showStage2Dialog();
+        }
+
+        function skipStage2() {
+            clearInterval(s2TimerInterval);
+            showScreen('success-screen');
+            confetti({
+                particleCount: 150, spread: 80, origin: { y: 0.6 },
+                colors: ['#2ecc71', '#4facfe', '#ffffff', '#f1c40f']
+            });
         }
 
         /* --- STAGE 1 LOGIC (MATCH GAME) --- */
@@ -463,11 +483,8 @@
                 if (s1MatchesCount === s1Pairs.length) {
                     clearInterval(s1TimerInterval);
                     
-                    // Show completion dialog and set auto transition
                     setTimeout(() => {
                         document.getElementById('dialog-s1-end').classList.add('active');
-                        
-                        // Automatically continue to Stage 2 after 2.5 seconds
                         autoTransitionTimeout = setTimeout(() => {
                             showStage2Dialog();
                         }, 2500);
@@ -479,7 +496,6 @@
                 s1SelectedLeft.classList.remove('selected');
                 s1SelectedLeft = null;
                 
-                // Penalty
                 s1TimeLeft -= 5;
                 updateS1Timer();
                 let timerEl = document.getElementById('s1-timer');
@@ -528,7 +544,7 @@
             'assets/fevadol_cold&flu.png',
             'assets/fevadol_sinus.png',
             'assets/fevadol_syrup.png',
-            'assets/saudi_made_logo.png' // The 8th required asset
+            'assets/saudi_made_logo.png' 
         ];
 
         let s2TimerInterval;
@@ -539,7 +555,6 @@
         let s2MatchesCount = 0;
 
         function showStage2Dialog() {
-            // Clear auto transition if the user clicked the button manually
             clearTimeout(autoTransitionTimeout); 
             
             document.getElementById('dialog-s1-end').classList.remove('active');
@@ -580,7 +595,6 @@
             document.getElementById('s2-matches').innerText = `✔️ 0/8`;
             updateS2Timer();
 
-            // Reveal cards briefly
             s2LockBoard = true;
             const cards = document.querySelectorAll('.memory-card');
             cards.forEach(c => c.classList.add('flipped'));

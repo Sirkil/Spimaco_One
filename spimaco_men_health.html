@@ -81,15 +81,14 @@
     #game-world {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
-      background-image: url('assets/scene.jpg'); /* New Extended Image */
-      background-size: auto 100%; /* Locks height to screen, allows width to be long */
-      background-position: 0% 0%; /* Starts at the far left edge */
+      background-image: url('assets/scene.jpg'); 
+      background-size: auto 100%; 
+      background-position: 0% 0%; 
       z-index: 1;
       overflow: hidden;
     }
 
     .run-bg {
-      /* Pans smoothly from the far left (0%) to the far right (100%) over 80 seconds */
       animation: panWideScene 80s linear forwards; 
     }
 
@@ -101,7 +100,7 @@
     .ground {
       position: absolute;
       bottom: 0; left: 0; width: 200%; 
-      height: 180px; /* Raised Ground */
+      height: 25vh; /* Dynamically takes exactly 1/4 of the screen */
       background: #2c3e50;
       border-top: 12px solid #34495e;
       z-index: 2;
@@ -149,9 +148,9 @@
     /* --- Enlarged Game Objects --- */
     #player {
       position: absolute;
-      left: 5%; /* Pulled back slightly for better reaction time */
-      bottom: 180px; 
-      width: 180px;  /* Massively Enlarged Knight */
+      left: 5%; 
+      bottom: 25vh; 
+      width: 180px;  
       height: 220px;
       z-index: 4;
       transition: filter 0.3s ease;
@@ -165,8 +164,8 @@
 
     .game-item {
       position: absolute;
-      bottom: 180px; 
-      width: 90px; /* Scaled up Items */
+      bottom: 25vh; 
+      width: 90px; 
       height: 90px;
       z-index: 3;
       display: flex;
@@ -176,9 +175,9 @@
 
     .shelf {
       position: absolute;
-      bottom: 380px; 
-      width: 320px;  /* Wider shelf */
-      height: 40px;  /* Thicker shelf */
+      bottom: calc(25vh + 220px);  /* Increased the height so it rests higher up */
+      width: 320px;  
+      height: 40px;  
       background: linear-gradient(to bottom, #2ecc71, #27ae60);
       border-radius: 12px;
       z-index: 2;
@@ -186,26 +185,36 @@
       border-top: 4px solid #4ade80;
     }
 
-    /* --- Controls --- */
-    .jump-btn-area {
+    /* --- Controls Area --- */
+    .jump-container {
       position: absolute;
-      bottom: 30px; 
-      right: 20px; 
+      bottom: 0; left: 0; 
+      width: 100%; 
+      height: 25vh; /* 1/4 of the screen perfectly aligns with the .ground */
+      background: rgba(0,0,0,0.1); 
+      border-top: 2px solid rgba(255,255,255,0.2);
+      display: flex; 
+      justify-content: center; 
+      align-items: center;
       z-index: 10;
-      width: 110px;
-      height: 110px;
+    }
+
+    .jump-btn-area {
+      width: 140px;
+      height: 140px;
       background: rgba(255,255,255,0.15);
       border: 4px solid rgba(255,255,255,0.5);
       border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 1.5rem;
+      font-size: 2rem;
       font-weight: 900;
       color: white;
-      backdrop-filter: blur(5px);
       box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+      transition: transform 0.1s;
     }
+
     .jump-btn-area:active { 
         background: rgba(255,255,255,0.4); 
         transform: scale(0.92); 
@@ -268,7 +277,6 @@
 
   <div id="app-container">
 
-    <!-- START SCREEN -->
     <div id="start-screen" class="screen active">
       <img src="assets/Men Health Logo.png" alt="Spimaco" style="max-width: 220px; margin-bottom: 20px;" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
       <div class="title">Health Runner</div>
@@ -276,7 +284,6 @@
       <button class="btn" onclick="showDialog()">Start Game</button>
     </div>
 
-    <!-- DIALOG SCREEN -->
     <div id="dialog-screen" class="screen">
       <div class="dialog-box">
         <h2 style="font-size: 2rem; margin-bottom: 15px;">How to Play</h2>
@@ -287,17 +294,15 @@
           <li>🟡 <strong>Snafi:</strong> Grants 20 seconds of pure power glow!</li>
         </ul>
         <br>
-        <p><strong>Note:</strong> Jump on top of the green shelves to reach high items or avoid spikes on the ground!</p>
+        <p><strong>Note:</strong> Tap anywhere on the screen or press the Jump button to reach high items!</p>
         <button class="btn" onclick="startGame()">I'm Ready!</button>
       </div>
     </div>
 
-    <!-- GAME SCREEN -->
-    <div id="game-screen" class="screen">
+    <div id="game-screen" class="screen" onpointerdown="jump()">
       <div id="game-world">
         <div class="ground" id="ground"></div>
         
-        <!-- Player -->
         <div id="player">
           <img src="assets/knight (2).gif" onerror="this.onerror=null; this.src='https://placehold.co/180x220/transparent/white?text=K'">
         </div>
@@ -313,11 +318,11 @@
 
       <div id="toast-msg" class="toast">Message</div>
 
-      <!-- Jump Button mapped to Pointer Down for instant mobile response -->
-      <div class="jump-btn-area" onpointerdown="jump()">JUMP</div>
+      <div class="jump-container">
+          <div class="jump-btn-area">JUMP</div>
+      </div>
     </div>
 
-    <!-- RESULT SCREEN -->
     <div id="result-screen" class="screen">
       <div class="title" id="result-title" style="color: var(--green);">Victory!</div>
       <p style="color: #ccc; margin-bottom: 20px; font-size: 1.2rem;">You completed the run.</p>
@@ -362,13 +367,12 @@
 
     // Physics & Player
     const playerEl = document.getElementById('player');
-    const groundHeight = 180; 
-    const shelfLogicalHeight = 160; 
+    const shelfLogicalHeight = 220; // INCREASED height of the shelf 
     let playerY = 0; 
     let prevPlayerY = 0;
     let playerVy = 0;
     const gravity = -3500; 
-    const jumpPower = 1200; 
+    const jumpPower = 1400; // INCREASED jump power so they can land on the new taller shelf
     let isJumping = false;
 
     // Environment
@@ -511,18 +515,18 @@
         el.style.left = startX + 'px';
         el.dataset.x = startX;
 
-        // Shelf Spawning
+        // Shelf Spawning (Calculate relative to the 25vh base)
         if (data.type === 'shelf') {
             el.className = 'shelf';
-            el.style.bottom = `${groundHeight + shelfLogicalHeight}px`;
+            el.style.bottom = `calc(25vh + ${shelfLogicalHeight}px)`;
             document.getElementById('game-world').appendChild(el);
             return;
         }
 
-        // Item Spawning
+        // Item Spawning (Calculate relative to the 25vh base)
         el.className = 'game-item';
         el.dataset.type = data.type;
-        el.style.bottom = `${groundHeight + data.y}px`;
+        el.style.bottom = `calc(25vh + ${data.y}px)`;
 
         if (data.type === 'heart') {
             el.innerHTML = `<span style="font-size:4.5rem; filter: drop-shadow(0 0 10px rgba(255,0,0,0.6));">❤️</span>`;
@@ -551,7 +555,7 @@
         playerY += playerVy * dt;
 
         // 2. Check Platform Collisions
-        let floorY = 0; // Default floor
+        let floorY = 0; // Default floor (0 pixels above the 25vh line)
         const pRect = playerEl.getBoundingClientRect();
         
         // Define logical bounds for the enlarged Knight
@@ -583,7 +587,8 @@
             isJumping = false;
         }
 
-        playerEl.style.bottom = `${groundHeight + playerY}px`;
+        // Apply dynamic height using calc CSS so the player correctly stacks on top of the responsive 25vh ground
+        playerEl.style.bottom = `calc(25vh + ${playerY}px)`;
 
         // 4. Snafi Energy Drain
         if (snafiTimeLeft > 0) {
