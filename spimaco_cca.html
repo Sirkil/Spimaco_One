@@ -202,25 +202,29 @@
         flex-shrink: 0;
     }
 
-    .d-pad {
+.d-pad {
         display: grid;
-        grid-template-columns: 50px 50px 50px;
-        grid-template-rows: 50px 50px;
-        gap: 8px;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(2, auto);
+        gap: 12px;
+        width: 85%; /* Dynamically scales the grid to fill the 25% side panel */
+        max-width: 250px; /* Prevents them from getting absurdly huge on desktop monitors */
     }
 
     .d-btn {
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(79, 172, 254, 0.3);
-        border-radius: 12px;
+        border-radius: 16px; /* Slightly rounder for the larger size */
         color: var(--blue);
-        font-size: 1.2rem;
+        font-size: 2.2rem; /* Much larger arrow icons */
+        font-weight: bold;
         display: flex;
         justify-content: center;
         align-items: center;
         cursor: pointer;
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         transition: all 0.1s;
+        aspect-ratio: 1 / 1; /* Forces the buttons to remain perfect squares as they grow */
     }
 
     .d-btn:active {
@@ -248,7 +252,7 @@
     }
     
     .bottom-logo {
-        height: 70px;
+        height: 200px;
         max-width: 80%;
         object-fit: contain;
     }
