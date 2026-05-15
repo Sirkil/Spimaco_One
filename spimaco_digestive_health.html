@@ -152,6 +152,10 @@
             height: 40px;
         }
 
+        .bottom-logo {
+            height: 90px;
+        }
+
         .stats-bar {
             display: flex;
             gap: 15px;
@@ -287,9 +291,8 @@
 
         .tetris-wrapper {
             position: relative;
-            width: 80%; /* Vertical rectangle width */
-            max-width: 300px;
-            height: 400px; /* Double the width for 4 cols x 8 rows */
+            width: 80vw; /* Takes exactly 80% of screen width */
+            height: 60vh; /* Takes exactly 60% of screen height */
             border: 3px solid rgba(255, 255, 255, 0.2);
             border-radius: 10px;
             background: rgba(0, 0, 0, 0.4);
@@ -297,13 +300,6 @@
             overflow: hidden; 
             flex-shrink: 0;
             margin-top: 30px; 
-        }
-
-        @media (max-width: 420px) {
-            .tetris-wrapper {
-                width: 50vw; 
-                height: 100vw;
-            }
         }
 
         @keyframes glowRed {
@@ -318,7 +314,7 @@
 
         .threshold-line {
             position: absolute;
-            bottom: calc((100% / 8) * 6); /* Set to 6 blocks high for an 8-row grid */
+            bottom: calc((100% / 8) * 4); /* Set to 4 blocks high for an 8-row grid */
             left: 0;
             width: 100%;
             height: 2px;
@@ -422,7 +418,6 @@
 
         <div id="stage1-screen" class="screen">
             <header>
-                <img src="assets/Asset 1.png" alt="Logo" class="top-logo" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
                 <div class="stats-bar">
                     <button class="stat-box skip-btn" onclick="skipStage1()">⏭️ Skip</button>
                     <div class="stat-box" id="s1-timer">⏱️ 30</div>
@@ -433,7 +428,7 @@
             <canvas id="catchCanvas"></canvas>
             
             <div class="bottom-container" id="s1-bottom-container">
-            
+            <img src="assets/Asset 1.png" alt="Logo" class="bottom-logo" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
             </div>
         </div>
 
@@ -486,8 +481,16 @@
             <div class="dialog-box">
                 <img src="assets/tetris_game_icon.png" alt="Brick" style="height: 60px; margin-bottom: 10px; object-fit: contain;">
                 <h2>Stage 2: Tetris Stack</h2>
-                <p>Junk food will drop automatically into the columns. When a column stacks 6 items high, the screen will glow red. Use <strong>Peptazol</strong> to clear it!</p>
+                <p>Junk food will drop automatically into the columns. When a column stacks 4 items high, the screen will glow red. You have 5 seconds to use <strong>Peptazol</strong> to clear it before it fills up completely!</p>
                 <button class="action-btn" onclick="startStage2()">Start Stage 2</button>
+            </div>
+        </div>
+        
+        <div class="dialog-overlay" id="dialog-s2-lose">
+            <div class="dialog-box">
+                <h2 style="color: var(--neon-red);">Heartburn Ruined Your Mode!</h2>
+                <p>You didn't take Peptazol in time or the food stacked too high.</p>
+                <button class="action-btn" onclick="retryStage2()">Try Again</button>
             </div>
         </div>
 
@@ -702,6 +705,10 @@
         let gridState = Array(cols).fill(0); 
         let toastTriggered = false; 
         let autoDropInterval; 
+        
+        // Timer variables for Peptazol button
+        let peptazolTimerInterval = null;
+        let peptazolTimeLeft = 5;
 
         function showStage2Dialog() {
             document.getElementById('dialog-s1-end').classList.remove('active');
@@ -712,14 +719,30 @@
 
         function startStage2() {
             document.getElementById('dialog-s2-intro').classList.remove('active');
+            document.getElementById('dialog-s2-lose').classList.remove('active');
+            
             toastTriggered = false;
             document.getElementById('peptazol-toast').classList.remove('show');
+            
+            // Reset button and timers
+            const btn = document.getElementById('btn-peptazol');
+            btn.disabled = true;
+            btn.innerHTML = `Use<br>Peptazol`;
+            if (peptazolTimerInterval) {
+                clearInterval(peptazolTimerInterval);
+                peptazolTimerInterval = null;
+            }
+
             buildGrid();
             startAutoDrop(); 
         }
         
         function skipStage2() {
             clearInterval(autoDropInterval);
+            if (peptazolTimerInterval) {
+                clearInterval(peptazolTimerInterval);
+                peptazolTimerInterval = null;
+            }
             
             // Clean up intro dialog if skipped before starting
             document.getElementById('dialog-s2-intro').classList.remove('active'); 
@@ -764,9 +787,11 @@
                     
                     dropBlock(randomColIndex, targetColElement);
                 } else {
+                    // This block will theoretically never be hit now because
+                    // checkTetrisWin() catches the grid filling up completely first.
                     clearInterval(autoDropInterval);
                 }
-            }, 500); 
+            }, 100); 
         }
 
         function dropBlock(colIndex, colElement) {
@@ -791,26 +816,67 @@
         }
 
         function checkTetrisWin() {
-            let thresholdMet = gridState.some(height => height >= 6); 
+            // Check if any column hit the absolute top (8 rows)
+            let maxMet = gridState.some(height => height >= 8);
+            if (maxMet) {
+                if (peptazolTimerInterval) {
+                    clearInterval(peptazolTimerInterval);
+                    peptazolTimerInterval = null;
+                }
+                clearInterval(autoDropInterval);
+                showStage2Lose();
+                return; // Stop further checks
+            }
+
+            // Updated to check for the 4th row
+            let thresholdMet = gridState.some(height => height >= 4); 
             
-            if (thresholdMet) {
+            if (thresholdMet && !peptazolTimerInterval) {
                 document.getElementById('tetris-wrapper').classList.add('glow');
                 const btn = document.getElementById('btn-peptazol');
                 btn.disabled = false;
                 
-                clearInterval(autoDropInterval);
+                // NOT clearing autoDropInterval here so blocks continue to fall
 
                 if (!toastTriggered) {
                     toastTriggered = true;
                     document.getElementById('peptazol-toast').classList.add('show');
                 }
+
+                // Start 5-second countdown timer
+                peptazolTimeLeft = 5;
+                btn.innerHTML = `Use<br>Peptazol<br>(${peptazolTimeLeft}s)`;
+                peptazolTimerInterval = setInterval(() => {
+                    peptazolTimeLeft--;
+                    if(peptazolTimeLeft > 0) {
+                        btn.innerHTML = `Use<br>Peptazol<br>(${peptazolTimeLeft}s)`;
+                    } else {
+                        // Timer expired, show lose dialog
+                        clearInterval(peptazolTimerInterval);
+                        peptazolTimerInterval = null;
+                        clearInterval(autoDropInterval); // Also stop dropping when lost by timeout
+                        showStage2Lose();
+                    }
+                }, 1000);
             }
         }
 
         function usePeptazol() {
+            // Stop the dropping items since the user successfully hit the button
+            clearInterval(autoDropInterval);
+
+            // Clear the timer
+            if (peptazolTimerInterval) {
+                clearInterval(peptazolTimerInterval);
+                peptazolTimerInterval = null;
+            }
+            
+            const btn = document.getElementById('btn-peptazol');
+            btn.innerHTML = `Use<br>Peptazol`; // reset text
+
             const popup = document.getElementById('peptazol-popup');
             popup.classList.add('show');
-            document.getElementById('btn-peptazol').disabled = true;
+            btn.disabled = true;
             document.getElementById('peptazol-toast').classList.remove('show');
 
             setTimeout(() => {
@@ -822,6 +888,20 @@
                     document.getElementById('dialog-s2-end').classList.add('active');
                 }, 400);
             }, 1500);
+        }
+
+        function showStage2Lose() {
+            clearInterval(autoDropInterval); // Ensure drops stop
+            document.getElementById('btn-peptazol').disabled = true;
+            document.getElementById('btn-peptazol').innerHTML = `Use<br>Peptazol`;
+            document.getElementById('peptazol-toast').classList.remove('show');
+            document.getElementById('dialog-s2-lose').classList.add('active');
+        }
+
+        function retryStage2() {
+            document.getElementById('dialog-s2-lose').classList.remove('active');
+            document.getElementById('tetris-wrapper').classList.remove('glow');
+            startStage2();
         }
 
         function finishGame() {

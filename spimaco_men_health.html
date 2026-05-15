@@ -178,11 +178,11 @@
       bottom: calc(25vh + 220px);  /* Increased the height so it rests higher up */
       width: 320px;  
       height: 40px;  
-      background: linear-gradient(to bottom, #2ecc71, #27ae60);
+      background: linear-gradient(to bottom, #4facfe, #4facfe);
       border-radius: 12px;
       z-index: 2;
       box-shadow: 0 5px 15px rgba(0,0,0,0.6);
-      border-top: 4px solid #4ade80;
+      border-top: 4px solid #4facfe;
     }
 
     /* --- Controls Area --- */
@@ -304,7 +304,7 @@
         <div class="ground" id="ground"></div>
         
         <div id="player">
-          <img src="assets/knight (2).gif" onerror="this.onerror=null; this.src='https://placehold.co/180x220/transparent/white?text=K'">
+          <img src="assets/Hero-GIF.gif" onerror="this.onerror=null; this.src='https://placehold.co/180x220/transparent/white?text=K'">
         </div>
       </div>
 
@@ -342,12 +342,32 @@
         </div>
       </div>
 
-      <button class="btn" style="margin-top: 30px;" onclick="location.reload()">Play Again</button>
+      <button class="btn" style="margin-top: 30px;" onclick="restartGame()">Play Again</button>
     </div>
 
   </div>
 
   <script>
+    // --- IMAGE PRELOADER ---
+    // This forces the browser to download and hold the images in memory immediately
+    const preloadedImages = {};
+    const assetUrls = [
+        'assets/scene_6.png',
+        'assets/Hero-GIF.gif',
+        'assets/Men Health Logo.png',
+        'assets/spike.png',
+        'assets/snafi.png',
+        'assets/legam.png'
+    ];
+
+    window.addEventListener('DOMContentLoaded', () => {
+        assetUrls.forEach(url => {
+            const img = new Image();
+            img.src = url;
+            preloadedImages[url] = img;
+        });
+    });
+
     // --- SYSTEM UTILS ---
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -461,9 +481,15 @@
         countdownTimer = 30;
         stats = { hearts: 0, snafi: 0, legam: 0 };
         snafiTimeLeft = 0;
+        playerY = 0;
+        playerVy = 0;
+        isJumping = false;
         
-        // Trigger Background Panning Animation
-        document.getElementById('game-world').classList.add('run-bg');
+        // Trigger Background Panning Animation securely for restarts
+        const gw = document.getElementById('game-world');
+        gw.classList.remove('run-bg');
+        void gw.offsetWidth; // Force a reflow to restart CSS animation properly
+        gw.classList.add('run-bg');
         
         generatedLevel = generateLevel();
 
@@ -474,6 +500,7 @@
         
         // Clear old items & shelves
         document.querySelectorAll('.game-item, .shelf').forEach(el => el.remove());
+        document.querySelectorAll('.floating-heart').forEach(el => el.remove());
 
         // Start Clocks
         clearInterval(countdownInterval);
@@ -486,6 +513,14 @@
 
         lastFrameTime = performance.now();
         gameLoopId = requestAnimationFrame(gameLoop);
+    }
+
+    // --- RESTART GAME FUNCTION ---
+    // Soft reset function replaces location.reload() to avoid re-fetching images
+    function restartGame() {
+        document.querySelectorAll('.floating-heart').forEach(el => el.remove());
+        document.getElementById('game-world').classList.remove('run-bg');
+        showScreen('start-screen');
     }
 
     function jump() {

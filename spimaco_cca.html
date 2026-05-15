@@ -58,6 +58,12 @@
         padding: 20px;
     }
     .screen.active { display: flex; }
+
+    /* Remove padding from game screen to strictly control vh heights */
+    #screen-game {
+        padding: 0;
+        justify-content: flex-start;
+    }
     
     .auth-title {
       font-size: 3rem;
@@ -113,28 +119,44 @@
     .dialog-box h2 { color: var(--blue); margin-bottom: 10px; }
     .dialog-box p { color: #ccc; margin-bottom: 20px; line-height: 1.4; font-size: 0.95rem; }
 
-    /* --- Game HUD & Canvas --- */
+    /* --- Layout Portions --- */
+
+    /* 1. TOP HALF (Maze + HUD) - 60% Height */
+    .top-section {
+        height: 60vh;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 15px 20px 5px 20px;
+        position: relative;
+        flex-shrink: 0;
+    }
+
     .hud { 
       display: flex; 
       justify-content: space-between; 
       align-items: center; 
-      margin-bottom: 5px; 
+      margin-bottom: 10px; 
       width: 100%; 
+      flex-shrink: 0;
     }
     .hud-text { font-size: 1.5rem; font-weight: 700; color: #ffffff; }
     
     #game-canvas-wrap { 
         position: relative; 
-        width: 100%; 
-        aspect-ratio: 13 / 19; 
+        width: 90vw; /* strictly 90% width */
+        flex: 1; /* Takes remaining space of the 60vh after HUD */
+        min-height: 0; 
         border-radius: 8px; 
         overflow: hidden; 
         box-shadow: 0 5px 20px rgba(0,0,0,0.5); 
-        flex-shrink: 0;
-        margin-top: 35px; /* Pushes the maze down so the toast doesn't overlap */
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
     
-    #maze-canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+    #maze-canvas { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
 
     .sprite { display: none; }
 
@@ -161,17 +183,17 @@
 
     .toast.show {
         opacity: 1;
-        top: 65px; /* Drops perfectly between HUD and Maze */
+        top: 65px; 
     }
 
-    /* --- D-Pad Controls --- */
+    /* 2. CONTROLS AREA - 20% Height */
     .controls-area {
+        height: 20vh;
+        width: 100%;
         display: flex;
         justify-content: center;
         align-items: center;
-        flex: 1;
-        width: 100%;
-        padding-top: 15px; 
+        flex-shrink: 0;
     }
 
     .d-pad {
@@ -207,6 +229,24 @@
     .btn-down { grid-column: 2; grid-row: 2; }
     .btn-right { grid-column: 3; grid-row: 2; }
 
+    /* 3. BOTTOM CONTAINER - 20% Height */
+    .bottom-container {
+        height: 20vh;
+        width: 100%;
+        background: var(--glass-bg);
+        border-top: 2px solid var(--blue);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    
+    .bottom-logo {
+        height: 70px;
+        max-width: 80%;
+        object-fit: contain;
+    }
+
   </style>
 </head>
 <body>
@@ -216,7 +256,6 @@
       
       <div id="power-toast" class="toast">⚡ Allergy Fight Mode Active!</div>
 
-      <!-- START SCREEN -->
       <div class="screen active" id="screen-start" style="justify-content: center; align-items: center; text-align: center;">
         <img src="assets/CCA Logo.png" alt="Spimaco" style="max-width: 180px; margin-bottom: 20px;" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
         <div class="auth-title">Pac-Maze</div>
@@ -226,7 +265,6 @@
         <button class="image-btn" onclick="showIntroDialog()">Start Game</button>
       </div>
 
-      <!-- INTRO DIALOG -->
       <div class="dialog-overlay" id="dialog-intro">
         <div class="dialog-box">
             <img src="assets/pacman_game_icon.png" alt="Captin One" style="height: 100px; margin-bottom: 10px; object-fit: contain;">
@@ -241,46 +279,48 @@
         </div>
       </div>
 
-      <!-- MAIN GAME SCREEN -->
       <div class="screen" id="screen-game">
-        <div class="hud">
-          <div style="display: flex; gap: 15px;">
-              <div class="hud-text">⭐ <span id="hud-score">0</span></div>
-              <div class="hud-text" style="color: #ff4757;">❤️ <span id="hud-lives">3</span></div>
-          </div>
-          <img src="assets/Asset 1.png" alt="Spimaco" style="height: 30px;" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
-          <div class="hud-text">⏱️<span id="hud-timer">60</span>s</div>
-        </div>
+        
+        <div class="top-section">
+            <div class="hud">
+              <div style="display: flex; gap: 15px;">
+                  <div class="hud-text">⭐ <span id="hud-score">0</span></div>
+                  <div class="hud-text" style="color: #ff4757;">❤️ <span id="hud-lives">3</span></div>
+              </div>
+              <div class="hud-text">⏱️<span id="hud-timer">60</span>s</div>
+            </div>
 
-        <div id="game-canvas-wrap">
-          <canvas id="maze-canvas"></canvas>
-          
-          <!-- Hidden Sprites for Canvas Drawing -->
-          <img id="player-sprite" src="assets/pacmanAsset.png" class="sprite" alt="PacMan">
-          <img id="ghost-sprite-0" src="assets/ghost1.png" class="sprite ghost" alt="Ghost">
-          <img id="ghost-sprite-1" src="assets/ghost2.png" class="sprite ghost" alt="Ghost">
-          <img id="ghost-sprite-2" src="assets/ghost3.png" class="sprite ghost" alt="Ghost">
-          <img id="ghost-sprite-3" src="assets/ghost4.png" class="sprite ghost" alt="Ghost">
-          
-          <!-- Power Mode Icons -->
-          <img id="vuln-ghost-0" src="assets/smoke.png" class="sprite" alt="Vuln">
-          <img id="vuln-ghost-1" src="assets/dust.png" class="sprite" alt="Vuln">
-          <img id="vuln-ghost-2" src="assets/perfumes.png" class="sprite" alt="Vuln">
-          <img id="vuln-ghost-3" src="assets/bugs.png" class="sprite" alt="Vuln">
+            <div id="game-canvas-wrap">
+              <canvas id="maze-canvas"></canvas>
+              
+              <img id="player-sprite" src="assets/pacmanAsset.png" class="sprite" alt="PacMan">
+              <img id="ghost-sprite-0" src="assets/ghost1.png" class="sprite ghost" alt="Ghost">
+              <img id="ghost-sprite-1" src="assets/ghost2.png" class="sprite ghost" alt="Ghost">
+              <img id="ghost-sprite-2" src="assets/ghost3.png" class="sprite ghost" alt="Ghost">
+              <img id="ghost-sprite-3" src="assets/ghost4.png" class="sprite ghost" alt="Ghost">
+              
+              <img id="vuln-ghost-0" src="assets/smoke.png" class="sprite" alt="Vuln">
+              <img id="vuln-ghost-1" src="assets/dust.png" class="sprite" alt="Vuln">
+              <img id="vuln-ghost-2" src="assets/perfumes.png" class="sprite" alt="Vuln">
+              <img id="vuln-ghost-3" src="assets/bugs.png" class="sprite" alt="Vuln">
+            </div>
         </div>
         
         <div class="controls-area">
             <div class="d-pad">
-                <!-- Using onpointerdown for instant mobile tap response without lag -->
                 <div class="d-btn btn-up" onpointerdown="setDir(0, -1)">▲</div>
                 <div class="d-btn btn-left" onpointerdown="setDir(-1, 0)">◀</div>
                 <div class="d-btn btn-down" onpointerdown="setDir(0, 1)">▼</div>
                 <div class="d-btn btn-right" onpointerdown="setDir(1, 0)">▶</div>
             </div>
         </div>
+        
+        <div class="bottom-container">
+            <img src="assets/Asset 1.png" alt="Logo" class="bottom-logo" onerror="this.onerror=null; this.src='https://placehold.co/150x50/171777/27bdff?text=Spimaco'">
+        </div>
+
       </div>
 
-      <!-- RESULT SCREEN -->
       <div class="screen" id="screen-result" style="justify-content: center; align-items: center; text-align: center;">
         <div style="font-size: 5rem; margin-bottom: 10px;" id="result-icon">🏆</div>
         <div class="auth-title" id="result-title">Game Over</div>
@@ -681,19 +721,19 @@
                 if (map[r][c] === 6) imgToDraw = preloadedPacks.liblab;
 
                if (imgToDraw && imgToDraw.complete && imgToDraw.naturalWidth !== 0) {
-    // Increased the pulse effect slightly
-    let pulseOffset = Math.sin(Date.now() / 120) * 3; 
-    
-    // Set base size to 1.5 times the tile size (makes it much larger)
-    let baseSize = ts * 1.2; 
-    let drawS = Math.round(baseSize + pulseOffset);
-    
-    // Dynamically center the enlarged image inside the grid cell
-    let drawX = Math.round(c*ts + (ts - drawS)/2);
-    let drawY = Math.round(r*ts + (ts - drawS)/2);
-    
-    ctx.drawImage(imgToDraw, drawX, drawY, drawS, drawS);
-} else {
+                    // Increased the pulse effect slightly
+                    let pulseOffset = Math.sin(Date.now() / 120) * 3; 
+                    
+                    // Set base size to 1.5 times the tile size (makes it much larger)
+                    let baseSize = ts * 1.2; 
+                    let drawS = Math.round(baseSize + pulseOffset);
+                    
+                    // Dynamically center the enlarged image inside the grid cell
+                    let drawX = Math.round(c*ts + (ts - drawS)/2);
+                    let drawY = Math.round(r*ts + (ts - drawS)/2);
+                    
+                    ctx.drawImage(imgToDraw, drawX, drawY, drawS, drawS);
+                } else {
                     ctx.beginPath(); ctx.arc(c*ts + ts/2, r*ts + ts/2, ts*0.3, 0, Math.PI*2); ctx.fill();
                 }
             }
